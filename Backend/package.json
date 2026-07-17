@@ -1,0 +1,40 @@
+{
+  "name": "hammy-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multi-user, end-to-end encrypted relay for Hammy clients and trusted Codex bridges.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:memory": "HAMMY_IN_MEMORY=true JWT_SECRET=local-development-secret-change-me-32-bytes tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "migrate": "tsx src/db/migrate.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "tsc -p tsconfig.json --noEmit && vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/websocket": "^11.2.0",
+    "@node-rs/argon2": "^2.0.2",
+    "fastify": "^5.6.2",
+    "jose": "^6.1.0",
+    "pg": "^8.16.3",
+    "ws": "^8.18.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.6",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

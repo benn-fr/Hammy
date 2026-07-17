@@ -1,0 +1,831 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0B8FC3C633566E43975B9F9E /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D1F762B38DA6304E9B19A9 /* DashboardView.swift */; };
+		1744C1FA32A66A40A11A2769 /* HammyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7852B667EDD6F1B7671C504F /* HammyModels.swift */; };
+		306D2ED979AA9E8EAF4C013D /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9ED6BEFFFBCD80490CAE3C3 /* LiveActivityManager.swift */; };
+		34E1A3053F8A9EB35A2E96D1 /* HammyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 44F6768E9823AF9DBF6BDA12 /* HammyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3AFCCAE6414EDBCBA8B51D67 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3B3CF9B4AFBC05D4228362 /* MainTabView.swift */; };
+		47F0221F3D67204B582FFF0F /* HammyCharacter-chroma-source.png in Resources */ = {isa = PBXBuildFile; fileRef = 55CFAA766E1305BFFA07F8B9 /* HammyCharacter-chroma-source.png */; };
+		488147FF93404D9B1A7AF235 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67643A88C00880850BF2ADE8 /* SettingsView.swift */; };
+		4A6EBC5A018D89A3392279F4 /* HammyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B410536E366D20CABA0384A2 /* HammyUITests.swift */; };
+		50A560D67540C5753CFA5556 /* TypewriterText.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC28746A740A45EC749DD68D /* TypewriterText.swift */; };
+		544C170585162DD525EB56E9 /* HammyActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */; };
+		5466BDF167396E061C081678 /* HammyAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAD66F48FAAD63791A606665 /* HammyAssets.xcassets */; };
+		5EB4C28F14BA165AF5983412 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36037E3D2F3C42167737FFE1 /* NotificationService.swift */; };
+		72F78D6F10396D5598D15339 /* UpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6E188A10CE5E8433D819D0 /* UpdatesView.swift */; };
+		7AD7D3E2D85E11204777556A /* SessionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CD78B3301BF5DD08E4F25C /* SessionViews.swift */; };
+		82E5F5CFAC5FEAF5507D0045 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FE59EBCB85601E0C696BEA8 /* OnboardingView.swift */; };
+		844B6B296CA67D74F7C4C47E /* HammyE2EE.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC951C8AA5B2CC481F737956 /* HammyE2EE.swift */; };
+		9DC19079572574F52BE92B6E /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60504270350640B3CE1C7597 /* AppStore.swift */; };
+		A3C16457FF6EA7428804C347 /* CodexBridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF87B42A32B9D90CCB790EF /* CodexBridgeClient.swift */; };
+		A3E049857806072FAA2A7CDF /* HammySharedStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9EA55B46728342396172E1 /* HammySharedStyle.swift */; };
+		A3F40DE8BA9B71928002D646 /* HammyActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */; };
+		A44DFD2C5DDA92A26D9EDE79 /* HammyCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6A0B86AC07ABB7284A8ED0 /* HammyCharacterView.swift */; };
+		A63C79F0845EA0B6B8635514 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7253DA71D4F5B27DE86FC36 /* RootView.swift */; };
+		B0D249BE9AB3DBAF9A76D05F /* HammyWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5146E8E43C107A27310A64F /* HammyWidgetBundle.swift */; };
+		B7161B149621B8F8E02118B4 /* HammyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE36DF2CE146A371B756AE9 /* HammyApp.swift */; };
+		C04299A5C30F05E10BA6CBFE /* HammyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34A0CB225455955DB5A91438 /* HammyTests.swift */; };
+		C1CE1EBD16E5FA8FD28499FB /* HammySharedStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9EA55B46728342396172E1 /* HammySharedStyle.swift */; };
+		CC0463E6ADC3FB6684B1DC32 /* HammyCharacter-full-transparent.png in Resources */ = {isa = PBXBuildFile; fileRef = DA5260CB99A6E2D3FBBA91BB /* HammyCharacter-full-transparent.png */; };
+		D21DDA776E9040BE1E4EBFD9 /* HammyAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAD66F48FAAD63791A606665 /* HammyAssets.xcassets */; };
+		DCAAB321BC7FD4D800E4F567 /* ChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3338ED02EEB7CCA05D9496 /* ChatDetailView.swift */; };
+		DFB25505C24D6A82EEC332C9 /* HammyDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC960A690FC96B14244069A /* HammyDesignSystem.swift */; };
+		E20F8B0094B7BBA8FE6BCC36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 43222F52A43A576F8C20CDA2 /* Assets.xcassets */; };
+		EADD2B4FFF788FE617A83B50 /* HammyLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72E3A63589351734C9F68AC2 /* HammyLiveActivityWidget.swift */; };
+		EDB9561AE7E0B1246BD0589D /* HammyCharacter-original.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0B03EFA31DAB40DB36003D77 /* HammyCharacter-original.jpg */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9BD3DB7092D75A29E23E8741 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A94162C09269B826F4B0805 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 23AAF29B5790A2443F9C8009;
+			remoteInfo = HammyWidget;
+		};
+		AD53ABB704C253EFBC358A41 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A94162C09269B826F4B0805 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C4E640451EF9E882004D7290;
+			remoteInfo = Hammy;
+		};
+		CD3B40C6EE71FE1ACF67674D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A94162C09269B826F4B0805 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C4E640451EF9E882004D7290;
+			remoteInfo = Hammy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B4CA83DF22E4849BDD552633 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				34E1A3053F8A9EB35A2E96D1 /* HammyWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0A2B9B9247215374A9B2E2F5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0B03EFA31DAB40DB36003D77 /* HammyCharacter-original.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "HammyCharacter-original.jpg"; sourceTree = "<group>"; };
+		1D21F89FD2189D6B0C0DC2C0 /* HammyUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HammyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2BF87B42A32B9D90CCB790EF /* CodexBridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexBridgeClient.swift; sourceTree = "<group>"; };
+		34A0CB225455955DB5A91438 /* HammyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyTests.swift; sourceTree = "<group>"; };
+		36037E3D2F3C42167737FFE1 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		3FE59EBCB85601E0C696BEA8 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		43222F52A43A576F8C20CDA2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		44F6768E9823AF9DBF6BDA12 /* HammyWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = HammyWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AC960A690FC96B14244069A /* HammyDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyDesignSystem.swift; sourceTree = "<group>"; };
+		55CFAA766E1305BFFA07F8B9 /* HammyCharacter-chroma-source.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "HammyCharacter-chroma-source.png"; sourceTree = "<group>"; };
+		5E3D1BA8D435D9FF14ABAA05 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		60504270350640B3CE1C7597 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		62D1F762B38DA6304E9B19A9 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		67643A88C00880850BF2ADE8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		6CE36DF2CE146A371B756AE9 /* HammyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyApp.swift; sourceTree = "<group>"; };
+		72E3A63589351734C9F68AC2 /* HammyLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyLiveActivityWidget.swift; sourceTree = "<group>"; };
+		7852B667EDD6F1B7671C504F /* HammyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyModels.swift; sourceTree = "<group>"; };
+		78D342D45260DC7783ED56E3 /* Hammy.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hammy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D6A0B86AC07ABB7284A8ED0 /* HammyCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyCharacterView.swift; sourceTree = "<group>"; };
+		8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyActivityAttributes.swift; sourceTree = "<group>"; };
+		A9ED6BEFFFBCD80490CAE3C3 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		B410536E366D20CABA0384A2 /* HammyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyUITests.swift; sourceTree = "<group>"; };
+		B7253DA71D4F5B27DE86FC36 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		CAD66F48FAAD63791A606665 /* HammyAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = HammyAssets.xcassets; sourceTree = "<group>"; };
+		CB3338ED02EEB7CCA05D9496 /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
+		CC28746A740A45EC749DD68D /* TypewriterText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypewriterText.swift; sourceTree = "<group>"; };
+		DA5260CB99A6E2D3FBBA91BB /* HammyCharacter-full-transparent.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "HammyCharacter-full-transparent.png"; sourceTree = "<group>"; };
+		E83CE09C5BBD57590627FDEC /* HammyTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HammyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA6E188A10CE5E8433D819D0 /* UpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesView.swift; sourceTree = "<group>"; };
+		EB9EA55B46728342396172E1 /* HammySharedStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammySharedStyle.swift; sourceTree = "<group>"; };
+		F4CD78B3301BF5DD08E4F25C /* SessionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViews.swift; sourceTree = "<group>"; };
+		F5146E8E43C107A27310A64F /* HammyWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyWidgetBundle.swift; sourceTree = "<group>"; };
+		FA3B3CF9B4AFBC05D4228362 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		FC951C8AA5B2CC481F737956 /* HammyE2EE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyE2EE.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		03DDFDF8911C761600614D7E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				8D6A0B86AC07ABB7284A8ED0 /* HammyCharacterView.swift */,
+				4AC960A690FC96B14244069A /* HammyDesignSystem.swift */,
+				F4CD78B3301BF5DD08E4F25C /* SessionViews.swift */,
+				CC28746A740A45EC749DD68D /* TypewriterText.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0ECFF697B4F7A7DE266D0625 /* Hammy */ = {
+			isa = PBXGroup;
+			children = (
+				03DDFDF8911C761600614D7E /* Components */,
+				17FEE29EF05A0582D72792A2 /* Features */,
+				ADA48BD280FC377D6D352768 /* Models */,
+				30CF9628C087065486507B6B /* Resources */,
+				C82D46EA7AE83B70C5B2F48C /* Services */,
+				60504270350640B3CE1C7597 /* AppStore.swift */,
+				43222F52A43A576F8C20CDA2 /* Assets.xcassets */,
+				6CE36DF2CE146A371B756AE9 /* HammyApp.swift */,
+				0A2B9B9247215374A9B2E2F5 /* Info.plist */,
+				B7253DA71D4F5B27DE86FC36 /* RootView.swift */,
+			);
+			path = Hammy;
+			sourceTree = "<group>";
+		};
+		135832A4974EDDA0CB21453A /* HammyWidget */ = {
+			isa = PBXGroup;
+			children = (
+				72E3A63589351734C9F68AC2 /* HammyLiveActivityWidget.swift */,
+				F5146E8E43C107A27310A64F /* HammyWidgetBundle.swift */,
+				5E3D1BA8D435D9FF14ABAA05 /* Info.plist */,
+			);
+			path = HammyWidget;
+			sourceTree = "<group>";
+		};
+		17FEE29EF05A0582D72792A2 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				5D56C5027937B1F6C8A61301 /* Chat */,
+				2B891236472B996A4355DF11 /* Dashboard */,
+				9D62DA74DCDBC770A0DDE416 /* Onboarding */,
+				DA6C6F5E04D75107BD1FF42E /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		2A47D074119850A002D5C1E0 /* HammyTests */ = {
+			isa = PBXGroup;
+			children = (
+				34A0CB225455955DB5A91438 /* HammyTests.swift */,
+			);
+			path = HammyTests;
+			sourceTree = "<group>";
+		};
+		2AC3E872CFFDEB84B37F818F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				78D342D45260DC7783ED56E3 /* Hammy.app */,
+				E83CE09C5BBD57590627FDEC /* HammyTests.xctest */,
+				1D21F89FD2189D6B0C0DC2C0 /* HammyUITests.xctest */,
+				44F6768E9823AF9DBF6BDA12 /* HammyWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2B891236472B996A4355DF11 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				62D1F762B38DA6304E9B19A9 /* DashboardView.swift */,
+				FA3B3CF9B4AFBC05D4228362 /* MainTabView.swift */,
+				EA6E188A10CE5E8433D819D0 /* UpdatesView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		30CF9628C087065486507B6B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				55CFAA766E1305BFFA07F8B9 /* HammyCharacter-chroma-source.png */,
+				DA5260CB99A6E2D3FBBA91BB /* HammyCharacter-full-transparent.png */,
+				0B03EFA31DAB40DB36003D77 /* HammyCharacter-original.jpg */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4758421AE6B8966583CDC210 /* HammyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B410536E366D20CABA0384A2 /* HammyUITests.swift */,
+			);
+			path = HammyUITests;
+			sourceTree = "<group>";
+		};
+		4839B516FBB807A8114E633A = {
+			isa = PBXGroup;
+			children = (
+				0ECFF697B4F7A7DE266D0625 /* Hammy */,
+				2A47D074119850A002D5C1E0 /* HammyTests */,
+				4758421AE6B8966583CDC210 /* HammyUITests */,
+				135832A4974EDDA0CB21453A /* HammyWidget */,
+				DF7DD55F095B6486A1F4F0B5 /* Shared */,
+				2AC3E872CFFDEB84B37F818F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5D56C5027937B1F6C8A61301 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				CB3338ED02EEB7CCA05D9496 /* ChatDetailView.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		9D62DA74DCDBC770A0DDE416 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				3FE59EBCB85601E0C696BEA8 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		ADA48BD280FC377D6D352768 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				7852B667EDD6F1B7671C504F /* HammyModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C82D46EA7AE83B70C5B2F48C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				2BF87B42A32B9D90CCB790EF /* CodexBridgeClient.swift */,
+				FC951C8AA5B2CC481F737956 /* HammyE2EE.swift */,
+				A9ED6BEFFFBCD80490CAE3C3 /* LiveActivityManager.swift */,
+				36037E3D2F3C42167737FFE1 /* NotificationService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		DA6C6F5E04D75107BD1FF42E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				67643A88C00880850BF2ADE8 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		DF7DD55F095B6486A1F4F0B5 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */,
+				CAD66F48FAAD63791A606665 /* HammyAssets.xcassets */,
+				EB9EA55B46728342396172E1 /* HammySharedStyle.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0352C222B87EAF7A55726120 /* HammyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC4DD825ED7F9E018BC3FE8D /* Build configuration list for PBXNativeTarget "HammyTests" */;
+			buildPhases = (
+				4E89B2FDEAA8A60CC6F31B94 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2FFDB1A5EAB12440F0DC5D72 /* PBXTargetDependency */,
+			);
+			name = HammyTests;
+			packageProductDependencies = (
+			);
+			productName = HammyTests;
+			productReference = E83CE09C5BBD57590627FDEC /* HammyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		23AAF29B5790A2443F9C8009 /* HammyWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3137391E13E8444898925052 /* Build configuration list for PBXNativeTarget "HammyWidget" */;
+			buildPhases = (
+				9646D8A545DE4754E8FA0549 /* Sources */,
+				11EE9D1D19AD240B59B1EE46 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HammyWidget;
+			packageProductDependencies = (
+			);
+			productName = HammyWidget;
+			productReference = 44F6768E9823AF9DBF6BDA12 /* HammyWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B2777CF62FBC9B8362E8D414 /* HammyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 33EB79264D90A3B166E702AA /* Build configuration list for PBXNativeTarget "HammyUITests" */;
+			buildPhases = (
+				82B1D034D74F1C4156FAEEDA /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D7C07EF107E4D160404FC288 /* PBXTargetDependency */,
+			);
+			name = HammyUITests;
+			packageProductDependencies = (
+			);
+			productName = HammyUITests;
+			productReference = 1D21F89FD2189D6B0C0DC2C0 /* HammyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		C4E640451EF9E882004D7290 /* Hammy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 41A64FBBB13E82DA47FEA6B5 /* Build configuration list for PBXNativeTarget "Hammy" */;
+			buildPhases = (
+				108EAA29EEA3018E10920E13 /* Sources */,
+				BEF0A034B1FF0A3107106AB7 /* Resources */,
+				B4CA83DF22E4849BDD552633 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				51B1B5B419282933E9523D65 /* PBXTargetDependency */,
+			);
+			name = Hammy;
+			packageProductDependencies = (
+			);
+			productName = Hammy;
+			productReference = 78D342D45260DC7783ED56E3 /* Hammy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3A94162C09269B826F4B0805 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0352C222B87EAF7A55726120 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					23AAF29B5790A2443F9C8009 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					B2777CF62FBC9B8362E8D414 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = C4E640451EF9E882004D7290;
+					};
+					C4E640451EF9E882004D7290 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = AD37D637C6E66B8E959F68F1 /* Build configuration list for PBXProject "Hammy" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4839B516FBB807A8114E633A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2AC3E872CFFDEB84B37F818F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C4E640451EF9E882004D7290 /* Hammy */,
+				23AAF29B5790A2443F9C8009 /* HammyWidget */,
+				0352C222B87EAF7A55726120 /* HammyTests */,
+				B2777CF62FBC9B8362E8D414 /* HammyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		11EE9D1D19AD240B59B1EE46 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D21DDA776E9040BE1E4EBFD9 /* HammyAssets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BEF0A034B1FF0A3107106AB7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E20F8B0094B7BBA8FE6BCC36 /* Assets.xcassets in Resources */,
+				5466BDF167396E061C081678 /* HammyAssets.xcassets in Resources */,
+				47F0221F3D67204B582FFF0F /* HammyCharacter-chroma-source.png in Resources */,
+				CC0463E6ADC3FB6684B1DC32 /* HammyCharacter-full-transparent.png in Resources */,
+				EDB9561AE7E0B1246BD0589D /* HammyCharacter-original.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		108EAA29EEA3018E10920E13 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9DC19079572574F52BE92B6E /* AppStore.swift in Sources */,
+				DCAAB321BC7FD4D800E4F567 /* ChatDetailView.swift in Sources */,
+				A3C16457FF6EA7428804C347 /* CodexBridgeClient.swift in Sources */,
+				0B8FC3C633566E43975B9F9E /* DashboardView.swift in Sources */,
+				A3F40DE8BA9B71928002D646 /* HammyActivityAttributes.swift in Sources */,
+				B7161B149621B8F8E02118B4 /* HammyApp.swift in Sources */,
+				A44DFD2C5DDA92A26D9EDE79 /* HammyCharacterView.swift in Sources */,
+				DFB25505C24D6A82EEC332C9 /* HammyDesignSystem.swift in Sources */,
+				844B6B296CA67D74F7C4C47E /* HammyE2EE.swift in Sources */,
+				1744C1FA32A66A40A11A2769 /* HammyModels.swift in Sources */,
+				A3E049857806072FAA2A7CDF /* HammySharedStyle.swift in Sources */,
+				306D2ED979AA9E8EAF4C013D /* LiveActivityManager.swift in Sources */,
+				3AFCCAE6414EDBCBA8B51D67 /* MainTabView.swift in Sources */,
+				5EB4C28F14BA165AF5983412 /* NotificationService.swift in Sources */,
+				82E5F5CFAC5FEAF5507D0045 /* OnboardingView.swift in Sources */,
+				A63C79F0845EA0B6B8635514 /* RootView.swift in Sources */,
+				7AD7D3E2D85E11204777556A /* SessionViews.swift in Sources */,
+				488147FF93404D9B1A7AF235 /* SettingsView.swift in Sources */,
+				50A560D67540C5753CFA5556 /* TypewriterText.swift in Sources */,
+				72F78D6F10396D5598D15339 /* UpdatesView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4E89B2FDEAA8A60CC6F31B94 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C04299A5C30F05E10BA6CBFE /* HammyTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		82B1D034D74F1C4156FAEEDA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A6EBC5A018D89A3392279F4 /* HammyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9646D8A545DE4754E8FA0549 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				544C170585162DD525EB56E9 /* HammyActivityAttributes.swift in Sources */,
+				EADD2B4FFF788FE617A83B50 /* HammyLiveActivityWidget.swift in Sources */,
+				C1CE1EBD16E5FA8FD28499FB /* HammySharedStyle.swift in Sources */,
+				B0D249BE9AB3DBAF9A76D05F /* HammyWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2FFDB1A5EAB12440F0DC5D72 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C4E640451EF9E882004D7290 /* Hammy */;
+			targetProxy = CD3B40C6EE71FE1ACF67674D /* PBXContainerItemProxy */;
+		};
+		51B1B5B419282933E9523D65 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 23AAF29B5790A2443F9C8009 /* HammyWidget */;
+			targetProxy = 9BD3DB7092D75A29E23E8741 /* PBXContainerItemProxy */;
+		};
+		D7C07EF107E4D160404FC288 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C4E640451EF9E882004D7290 /* Hammy */;
+			targetProxy = AD53ABB704C253EFBC358A41 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3378D66589862FCB40A932B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = HammyWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.Hammy.Widget;
+				PRODUCT_NAME = HammyWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4DBFDE57E63339F4D8F5A1EB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		60D043CA8218011ED8220AE6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.HammyUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hammy;
+			};
+			name = Debug;
+		};
+		8B9FF5F3C45BE2DD82612715 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.HammyTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hammy.app/Hammy";
+			};
+			name = Debug;
+		};
+		8E2EB8DB52B4DACDE38F00EB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Hammy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.Hammy;
+				PRODUCT_NAME = Hammy;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A4542969881AFDB07D3FFADA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.HammyTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hammy.app/Hammy";
+			};
+			name = Release;
+		};
+		D7A563CFC53E4162BC172995 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D879A16E35BD0E0E0C53DB05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = HammyWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.Hammy.Widget;
+				PRODUCT_NAME = HammyWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F4264E46EC3B5E863C590AE2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Hammy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.Hammy;
+				PRODUCT_NAME = Hammy;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FE9F7A1EE464FE9770967EC8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ben.HammyUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hammy;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3137391E13E8444898925052 /* Build configuration list for PBXNativeTarget "HammyWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D879A16E35BD0E0E0C53DB05 /* Debug */,
+				3378D66589862FCB40A932B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		33EB79264D90A3B166E702AA /* Build configuration list for PBXNativeTarget "HammyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60D043CA8218011ED8220AE6 /* Debug */,
+				FE9F7A1EE464FE9770967EC8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		41A64FBBB13E82DA47FEA6B5 /* Build configuration list for PBXNativeTarget "Hammy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8E2EB8DB52B4DACDE38F00EB /* Debug */,
+				F4264E46EC3B5E863C590AE2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AC4DD825ED7F9E018BC3FE8D /* Build configuration list for PBXNativeTarget "HammyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B9FF5F3C45BE2DD82612715 /* Debug */,
+				A4542969881AFDB07D3FFADA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AD37D637C6E66B8E959F68F1 /* Build configuration list for PBXProject "Hammy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DBFDE57E63339F4D8F5A1EB /* Debug */,
+				D7A563CFC53E4162BC172995 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3A94162C09269B826F4B0805 /* Project object */;
+}

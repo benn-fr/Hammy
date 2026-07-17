@@ -1,0 +1,14 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+Backend/.env
+Backend/node_modules/
+Backend/dist/
+Backend/coverage/
+*.xcresult/
+QA/TestAttachments-*/
+QA/diagnostic.mov
+QA/diagnostic.png
+QA/onboarding.png
