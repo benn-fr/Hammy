@@ -31,6 +31,14 @@ curl http://127.0.0.1:8787/healthz
 
 Migrations run automatically when the backend container starts. The passwords and JWT secret in `docker-compose.yml` are local-development values and must be replaced before any shared deployment.
 
+For a single-host deployment, copy `.env.production.example` to `.env`, generate distinct random values for the three secret fields, and run:
+
+```sh
+docker compose -f docker-compose.production.yml up -d --build
+```
+
+That configuration exposes the API on port `6969`, keeps PostgreSQL private to the Docker network, and restarts services after host reboots. Put the API behind TLS before connecting a client over an untrusted network.
+
 For an API-only in-memory development process:
 
 ```sh
