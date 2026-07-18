@@ -253,7 +253,7 @@ private struct BridgeConnectionCard: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionTitle(title: "Encrypted relay", subtitle: "Connect to the multi-user Hammy backend")
 
-            TextField("https://hammy.example/", text: $store.bridgeURL)
+            TextField("https://backend.yzycoin.app", text: $store.bridgeURL)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.URL)
                 .autocorrectionDisabled()

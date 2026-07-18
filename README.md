@@ -50,6 +50,8 @@ The **Sign in with ChatGPT** button deliberately enters a clearly labeled previe
 
 The repository now includes the authenticated multi-user relay under `Backend/`. A trusted desktop companion still owns Codex authentication and plaintext processing, then E2EE-encrypts updates before sending them through the relay. The companion can integrate with the [Codex app server](https://learn.chatgpt.com/docs/app-server), which supplies thread lifecycle, streamed item events, tool progress, and approvals. The documented ChatGPT sign-in flow applies to supported Codex surfaces; see [Codex authentication](https://learn.chatgpt.com/docs/auth).
 
+The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. Its live connection is derived automatically as `wss://backend.yzycoin.app/v1/events/live`; an authenticated relay access token is still required before it connects.
+
 The relay, threat model, and versioned cryptographic protocol are documented in `Backend/README.md`, `Backend/THREAT_MODEL.md`, and `Backend/PROTOCOL.md`. The official app-server WebSocket listener is currently experimental, so the trusted companion should prefer local stdio and must never expose a workstation listener directly to the internet.
 
 ## Build and test

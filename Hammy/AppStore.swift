@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 final class AppStore: ObservableObject {
+    static let productionRelayURL = "https://backend.yzycoin.app"
+
     @Published var sessions: [ChatSession] = DemoData.sessions
     @Published var updates: [SessionUpdate] = []
     @Published var appearance: AppearanceMode
@@ -27,7 +29,7 @@ final class AppStore: ObservableObject {
         hammyColor = HammyColorChoice(rawValue: defaults.string(forKey: "hammyColor") ?? "") ?? .cyan
         commandsAllowed = defaults.object(forKey: "commandsAllowed") as? Bool ?? true
         pluginsAllowed = defaults.object(forKey: "pluginsAllowed") as? Bool ?? true
-        bridgeURL = defaults.string(forKey: "bridgeURL") ?? ""
+        bridgeURL = defaults.string(forKey: "bridgeURL") ?? Self.productionRelayURL
         updates = sessions.flatMap { session in
             session.messages
                 .filter { $0.role == .update || $0.role == .assistant }
