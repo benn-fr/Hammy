@@ -9,6 +9,22 @@ if [ ! -d "$archive_path" ]; then
   exit 1
 fi
 
+executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$archive_path/Info.plist")
+binary_path="$archive_path/$executable"
+
+if [ ! -f "$binary_path" ]; then
+  echo "App executable was not found: $binary_path" >&2
+  exit 1
+fi
+
+# An IPA is only installable on an iPhone or iPad when the contained Mach-O is
+# built for iOS. Simulator bundles use a different platform slice even when
+# their CPU architecture is arm64, which produces a misleading dlopen error.
+if xcrun vtool -show-build "$binary_path" | grep -q 'platform IOSSIMULATOR'; then
+  echo "Refusing to package a simulator app. Archive with -destination 'generic/platform=iOS' first." >&2
+  exit 1
+fi
+
 staging_dir=$(mktemp -d)
 trap 'rm -rf "$staging_dir"' EXIT
 mkdir -p "$staging_dir/Payload"
