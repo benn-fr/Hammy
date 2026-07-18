@@ -11,6 +11,7 @@ Companion/node_modules/
 Companion/dist/
 Companion/dist-electron/
 Companion/release/
+*.ipa
 *.xcresult/
 QA/TestAttachments-*/
 QA/diagnostic.mov

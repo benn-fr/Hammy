@@ -56,6 +56,16 @@ The relay, threat model, and versioned cryptographic protocol are documented in 
 
 ## Build and test
 
+An unsigned device IPA can be created for inspection with:
+
+```sh
+xcodebuild archive -project Hammy.xcodeproj -scheme Hammy -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath /tmp/Hammy.xcarchive CODE_SIGNING_ALLOWED=NO
+./Scripts/create-ipa.sh /tmp/Hammy.xcarchive/Products/Applications/Hammy.app /tmp/Hammy-unsigned.ipa
+```
+
+An unsigned IPA cannot be installed on a physical device. A distributable IPA requires an Apple Developer signing certificate, provisioning profile, and an assigned `DEVELOPMENT_TEAM`.
+
 The final verification used Xcode 27 beta and an iPhone 17 Pro simulator:
 
 ```sh

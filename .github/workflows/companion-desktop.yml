@@ -39,3 +39,25 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: ${{ matrix.artifact }}
+
+  ios-ipa:
+    name: Build Hammy IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned device archive
+        run: |
+          xcodebuild archive \
+            -project Hammy.xcodeproj \
+            -scheme Hammy \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Hammy.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO
+          ./Scripts/create-ipa.sh \
+            "$RUNNER_TEMP/Hammy.xcarchive/Products/Applications/Hammy.app" \
+            "$RUNNER_TEMP/Hammy-unsigned.ipa"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hammy-ios-unsigned-ipa
+          path: ${{ runner.temp }}/Hammy-unsigned.ipa
