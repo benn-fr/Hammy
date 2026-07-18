@@ -10,7 +10,7 @@ For local packaging, run `npm run dist:mac`, `npm run dist:win`, or `npm run dis
 
 ## Install
 
-Install Node.js 22+ and the Codex CLI first, then clone this repository and run:
+Install Node.js 22+ first, then clone this repository and run:
 
 ```sh
 cd Companion
@@ -52,6 +52,10 @@ hammy-companion status
 hammy-companion serve
 ```
 
-In the desktop app, choose **Pair an iPhone** after signing in. It creates a 12-character, one-time code valid for ten minutes. Hammy uses that code to create a new iOS relay device; the companion signs its approval locally, and only then does the iPhone receive its own relay token and recipient-bound session keys. The pairing code is not a ChatGPT credential.
+The desktop app installs the official Codex CLI on the explicit **Sign in with ChatGPT** action when it is missing and npm is available. It then opens Codex’s local device-code browser sign-in. If Node/npm is missing, it explains how to install Node.js LTS; it never transfers a ChatGPT credential to Hammy.
 
-The relay endpoint defaults to `https://backend.yzycoin.app`; override it with `HAMMY_RELAY_URL` if needed. The companion translates local app-server thread events into signed, end-to-end encrypted relay envelopes. An iPhone main prompt continues the real thread; a `/btw` aside starts an isolated, read-only, ephemeral Codex thread. Command and file-change approvals wait for the paired iPhone and are never auto-approved. Keep Codex app-server on local stdio or an authenticated loopback socket.
+To pair, open Hammy on the iPhone and choose **Pair with Hammy Companion**. The phone creates a short-lived remote pairing request and shows a 12-character code. On the signed-in computer, choose **Find iPhone pairing request**, select the waiting opaque request, and enter that matching code. The companion verifies it, signs the iPhone device approval, and shares recipient-bound keys for its current tracked sessions. The phone then receives a scoped relay authorization over HTTPS. The code is not a ChatGPT credential.
+
+This flow works remotely through `https://backend.yzycoin.app`, including when the devices are no longer on the same Wi-Fi or Tailnet. If Tailscale is installed, the desktop app lists online Tailnet peers as a diagnostic only; it does not open a Codex port or make direct peer connections.
+
+The relay endpoint defaults to `https://backend.yzycoin.app`; override it with `HAMMY_RELAY_URL` if needed. The companion mirrors its local Codex threads to encrypted relay sessions and translates app-server thread events into signed, end-to-end encrypted envelopes. An iPhone main prompt continues the real thread; a `/btw` aside starts an isolated, read-only, ephemeral Codex thread. Command and file-change approvals wait for the paired iPhone and are never auto-approved. Keep Codex app-server on local stdio or an authenticated loopback socket.

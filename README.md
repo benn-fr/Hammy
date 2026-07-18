@@ -46,11 +46,11 @@ xcodegen generate
 
 ## Preview versus production
 
-Hammy uses a paired desktop companion for sign-in. The companion starts local Codex app-server and completes the documented ChatGPT device-code flow; the iPhone receives neither a ChatGPT access token nor a Codex credential. Instead, it proves a one-time companion pairing code, receives a device-specific relay token, and decrypts its own recipient-bound session keys from Keychain.
+Hammy uses a paired desktop companion for sign-in. The companion starts local Codex app-server and completes the documented ChatGPT device-code flow; the iPhone receives neither a ChatGPT access token nor a Codex credential. Instead, the iPhone creates a short-lived pairing request and displays a 12-character code. A signed-in companion discovers the opaque request through the relay, confirms that same code, and approves the device. Only then does the phone receive its own device-specific relay authorization and recipient-bound session keys in Keychain.
 
 The repository now includes the authenticated multi-user relay under `Backend/`. A trusted desktop companion still owns Codex authentication and plaintext processing, then E2EE-encrypts updates before sending them through the relay. The companion can integrate with the [Codex app server](https://learn.chatgpt.com/docs/app-server), which supplies thread lifecycle, streamed item events, tool progress, and approvals. The documented ChatGPT sign-in flow applies to supported Codex surfaces; see [Codex authentication](https://learn.chatgpt.com/docs/auth).
 
-The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. A paired companion publishes signed E2EE session metadata and progress events; iOS decrypts those envelopes locally. It does not ship demo sessions, token estimates, or controls that only change the screen.
+The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. A paired companion publishes signed E2EE session metadata and progress events; iOS decrypts those envelopes locally. The relay rendezvous works remotely from anywhere with internet access. If Tailscale is installed, the companion displays online Tailnet peers as a local-network diagnostic, but it never exposes Codex or relies on direct inbound connections. It does not ship demo sessions, token estimates, or controls that only change the screen.
 
 The relay, threat model, and versioned cryptographic protocol are documented in `Backend/README.md`, `Backend/THREAT_MODEL.md`, and `Backend/PROTOCOL.md`. The official app-server WebSocket listener is currently experimental, so the trusted companion should prefer local stdio and must never expose a workstation listener directly to the internet.
 
