@@ -2,6 +2,11 @@ name: Build Hammy Companion
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Git tag for the GitHub Release, for example v0.1.0"
+        required: true
+        type: string
   push:
     paths:
       - "Companion/**"
@@ -61,3 +66,51 @@ jobs:
         with:
           name: hammy-ios-unsigned-ipa
           path: ${{ runner.temp }}/Hammy-unsigned.ipa
+
+  release:
+    name: Publish GitHub Release
+    needs: [package, ios-ipa]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Package the macOS app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_bundle="$(find release-assets -type d -name 'Hammy Companion.app' -print -quit)"
+          test -n "$app_bundle"
+          (
+            cd "$(dirname "$app_bundle")"
+            zip -qry "$GITHUB_WORKSPACE/release-assets/Hammy-Companion-macos.zip" "$(basename "$app_bundle")"
+          )
+          cp "$(find release-assets -type f -name '*.exe' -print -quit)" release-assets/Hammy-Companion-windows.exe
+          cp "$(find release-assets -type f -name '*.AppImage' -print -quit)" release-assets/Hammy-Companion-linux.AppImage
+          cp "$(find release-assets -type f -name 'Hammy-unsigned.ipa' -print -quit)" release-assets/Hammy-unsigned.ipa
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets=(
+            release-assets/Hammy-Companion-macos.zip
+            release-assets/Hammy-Companion-windows.exe
+            release-assets/Hammy-Companion-linux.AppImage
+            release-assets/Hammy-unsigned.ipa
+          )
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --title "Hammy $RELEASE_TAG" \
+              --generate-notes \
+              --notes "Hammy Companion builds for macOS, Windows, and Linux, plus an unsigned iOS device IPA. The IPA must be signed with your own Apple Developer certificate before it can be installed on an iPhone."
+          fi
