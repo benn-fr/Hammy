@@ -2,13 +2,33 @@
   "name": "@hammy/companion",
   "version": "0.1.0",
   "private": true,
+  "author": "Hammy",
   "type": "module",
-  "description": "Local, cross-platform companion for pairing Hammy to Codex.",
+  "description": "Local, cross-platform desktop companion for pairing Hammy to Codex.",
   "engines": { "node": ">=22" },
   "bin": { "hammy-companion": "./dist/cli.js" },
+  "main": "dist-electron/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.desktop.json",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.desktop.json --noEmit",
+    "start": "npm run build && electron .",
+    "dist:mac": "npm run build && electron-builder --mac dir",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:linux": "npm run build && electron-builder --linux appImage"
   },
-  "devDependencies": { "@types/node": "^24.10.0", "typescript": "^5.9.3" }
+  "build": {
+    "appId": "app.yzycoin.hammy-companion",
+    "productName": "Hammy Companion",
+    "directories": { "output": "release" },
+    "files": ["dist-electron/**/*", "desktop/renderer/**/*", "package.json"],
+    "mac": { "target": ["dir"], "category": "public.app-category.productivity" },
+    "win": { "target": ["nsis"] },
+    "linux": { "target": ["AppImage"], "category": "Development" }
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.9.3"
+  }
 }

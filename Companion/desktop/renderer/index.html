@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hammy Companion</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="badge">HAMMY COMPANION</div>
+        <h1>Your local Codex bridge.</h1>
+        <p>Codex signs in on this computer. Hammy never receives or copies those credentials.</p>
+      </section>
+      <section class="actions">
+        <button id="status">Check Codex status</button>
+        <button id="login" class="primary">Sign in with Codex</button>
+        <button id="start">Start local pairing</button>
+        <button id="pair">Create pairing code</button>
+      </section>
+      <section class="relay">Encrypted relay: <strong>https://backend.yzycoin.app</strong></section>
+      <pre id="output" aria-live="polite">Ready. Sign in locally, then start pairing.</pre>
+    </main>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

@@ -1,6 +1,12 @@
 # Hammy Companion
 
-Hammy Companion is a local Node.js CLI for macOS, Windows, and Linux. It invokes the user's own installed Codex CLI; it never reads, exports, relays, or stores a ChatGPT/Codex credential.
+Hammy Companion is a local desktop app and CLI for macOS, Windows, and Linux. It invokes the user's own installed Codex CLI; it never reads, exports, relays, or stores a ChatGPT/Codex credential.
+
+## Desktop builds
+
+The repository’s GitHub Actions workflow produces native desktop artifacts: a macOS `.app`, Windows NSIS `.exe`, and Linux `.AppImage`. They are not code-signed yet; signing needs your Apple Developer and Windows certificate credentials before public distribution.
+
+For local packaging, run `npm run dist:mac`, `npm run dist:win`, or `npm run dist:linux` on the corresponding operating system. Output is written to `Companion/release/`.
 
 ## Install
 
@@ -11,6 +17,12 @@ cd Companion
 npm install
 npm run build
 npm link
+```
+
+To run the desktop app during development:
+
+```sh
+npm start
 ```
 
 On Windows PowerShell, run the same commands in PowerShell. If script execution is restricted, use `npm.cmd` in place of `npm`.

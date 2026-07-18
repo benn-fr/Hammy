@@ -9,6 +9,8 @@ Backend/dist/
 Backend/coverage/
 Companion/node_modules/
 Companion/dist/
+Companion/dist-electron/
+Companion/release/
 *.xcresult/
 QA/TestAttachments-*/
 QA/diagnostic.mov

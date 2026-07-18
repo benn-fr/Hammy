@@ -1,0 +1,40 @@
+name: Build Hammy Companion
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Companion/**"
+      - ".github/workflows/companion-desktop.yml"
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            command: npm run dist:mac
+            artifact: Companion/release/mac*/Hammy Companion.app
+            name: hammy-companion-macos-app
+          - os: windows-latest
+            command: npm run dist:win
+            artifact: Companion/release/*.exe
+            name: hammy-companion-windows-exe
+          - os: ubuntu-latest
+            command: npm run dist:linux
+            artifact: Companion/release/*.AppImage
+            name: hammy-companion-linux-appimage
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: Companion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: Companion/package-lock.json }
+      - run: npm ci
+      - run: ${{ matrix.command }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.artifact }}
