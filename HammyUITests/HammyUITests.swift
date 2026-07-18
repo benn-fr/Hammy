@@ -11,8 +11,8 @@ final class HammyUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.staticTexts["Your tiny session sidekick"].waitForExistence(timeout: 20))
-        let signInButton = app.buttons["Sign in with ChatGPT"]
-        XCTAssertTrue(signInButton.exists)
+        let signInButton = app.buttons["Pair with Hammy Companion"]
+        XCTAssertTrue(signInButton.waitForExistence(timeout: 20))
         let enabledExpectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "isEnabled == true"),
             object: signInButton
@@ -38,15 +38,7 @@ final class HammyUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
 
-        let openSession = app.buttons["Open session"].firstMatch
-        XCTAssertTrue(openSession.exists)
-        openSession.tap()
-        XCTAssertTrue(app.staticTexts["Tap Hammy for his quick read. Ask him an aside below without interrupting the main run."].waitForExistence(timeout: 10))
-
-        let chatAttachment = XCTAttachment(screenshot: app.screenshot())
-        chatAttachment.name = "Hammy Chat"
-        chatAttachment.lifetime = .keepAlways
-        add(chatAttachment)
+        XCTAssertTrue(app.staticTexts["No Codex sessions yet"].waitForExistence(timeout: 10))
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Make Hammy yours"].waitForExistence(timeout: 10))

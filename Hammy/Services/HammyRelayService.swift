@@ -235,6 +235,10 @@ final class HammyRelayService: ObservableObject {
         try await send(HammyRelayPayload(kind: "aside", state: nil, progress: nil, latestUpdate: nil, agentCount: nil, message: message), to: sessionID)
     }
 
+    func approveCommand(in sessionID: UUID) async throws {
+        try await send(HammyRelayPayload(kind: "approval", state: nil, progress: nil, latestUpdate: nil, agentCount: nil, message: nil), to: sessionID)
+    }
+
     private func send(_ payload: HammyRelayPayload, to sessionID: UUID) async throws {
         guard let credentials = try vault.relayCredentials(),
               let keyId = defaults.string(forKey: "sessionKeyID.\(sessionID.uuidString.lowercased())"),

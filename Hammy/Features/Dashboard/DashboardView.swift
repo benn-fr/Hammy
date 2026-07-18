@@ -157,7 +157,7 @@ struct DashboardView: View {
                 color: .hammyPurple
             )
             statCard(
-                value: "\(store.usage.hammyAsideCount)",
+                value: "\(store.sessions.flatMap(\.messages).filter { $0.isAside && $0.role == .user }.count)",
                 label: "Quick asides",
                 icon: "bolt.fill",
                 color: .hammyCyan

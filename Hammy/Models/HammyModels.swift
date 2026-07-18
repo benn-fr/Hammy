@@ -119,15 +119,4 @@ struct UsageSnapshot: Hashable {
 
     static let empty = UsageSnapshot(mainPromptTokens: 0, hammyTokens: 0, mainPromptCount: 0, hammyAsideCount: 0)
 
-    static func from(sessions: [ChatSession]) -> UsageSnapshot {
-        let messages = sessions.flatMap(\.messages)
-        let main = messages.filter { !$0.isAside && $0.role == .user }
-        let asides = messages.filter(\.isAside)
-        return UsageSnapshot(
-            mainPromptTokens: main.reduce(0) { $0 + max(1, $1.text.count / 4) },
-            hammyTokens: asides.reduce(0) { $0 + max(1, $1.text.count / 4) },
-            mainPromptCount: main.count,
-            hammyAsideCount: asides.count
-        )
-    }
 }

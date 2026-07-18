@@ -26,14 +26,16 @@ type RelayIdentity = {
 };
 
 type ManagedSession = { relaySessionId: string; threadId: string; keyId: string; sessionKey: string; seenEventIDs: string[] };
+type AsideRun = { session: ManagedSession; emittedReply: boolean };
 
-type RPCResponse = { id?: number; result?: unknown; error?: { message?: string } };
+type RPCResponse = { id?: number; method?: string; params?: any; result?: unknown; error?: { message?: string } };
 
 class CodexAppServer {
   private child: ChildProcessWithoutNullStreams | null = null;
   private nextID = 1;
   private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (reason: Error) => void }>();
   onNotification: ((method: string, params: any) => void) | null = null;
+  onServerRequest: ((method: string, id: number, params: any) => void) | null = null;
 
   async request(method: string, params: unknown = {}): Promise<any> {
     await this.start();
@@ -69,16 +71,20 @@ class CodexAppServer {
     try {
       const message = JSON.parse(line) as RPCResponse;
       if (typeof message.id !== "number") {
-        const notification = message as RPCResponse & { method?: string; params?: unknown };
-        if (notification.method) this.onNotification?.(notification.method, notification.params);
+        if (message.method) this.onNotification?.(message.method, message.params);
         return;
       }
+      if (message.method) { this.onServerRequest?.(message.method, message.id, message.params); return; }
       const waiter = this.pending.get(message.id);
       if (!waiter) return;
       this.pending.delete(message.id);
       if (message.error) waiter.reject(new Error(message.error.message ?? "Codex app-server request failed."));
       else waiter.resolve(message.result);
     } catch { /* Ignore malformed diagnostic output. */ }
+  }
+
+  respond(id: number, result: unknown) {
+    this.child?.stdin.write(`${JSON.stringify({ id, result })}\n`);
   }
 
   private rejectAll(error: Error) {
@@ -89,6 +95,8 @@ class CodexAppServer {
 
 const codex = new CodexAppServer();
 const activeTurns = new Set<string>();
+const pendingApprovals = new Map<string, { id: number; method: string }>();
+const asideRuns = new Map<string, AsideRun>();
 
 function deviceKeys(): DeviceKeys {
   const agreement = generateKeyPairSync("x25519");
@@ -337,6 +345,34 @@ async function startSession(prompt: string) {
   return { relaySessionId, threadId };
 }
 
+async function startAside(identity: RelayIdentity, session: ManagedSession, text: string) {
+  // Asides intentionally use a separate ephemeral Codex thread. They cannot alter
+  // the main thread's context, files, or approval state.
+  const started = await codex.request("thread/start", { ephemeral: true, sandbox: "read-only" });
+  const asideThreadId = started?.thread?.id;
+  if (typeof asideThreadId !== "string") throw new Error("Codex did not create Hammy's aside thread.");
+  asideRuns.set(asideThreadId, { session, emittedReply: false });
+  try {
+    await codex.request("turn/start", {
+      threadId: asideThreadId,
+      approvalPolicy: "never",
+      sandboxPolicy: { type: "readOnly", networkAccess: false },
+      input: [{
+        type: "text",
+        text: [
+          "You are Hammy, a concise companion for a separate in-progress Codex session.",
+          "Answer the user's aside directly in at most four short sentences.",
+          "Do not inspect, edit, create, delete, or run anything. Do not claim you can see the main session.",
+          `User aside: ${text.trim()}`,
+        ].join("\n"),
+      }],
+    });
+  } catch (error) {
+    asideRuns.delete(asideThreadId);
+    throw error;
+  }
+}
+
 function nestedText(value: any): string | null {
   if (typeof value === "string" && value.trim()) return value;
   if (!value || typeof value !== "object") return null;
@@ -353,29 +389,66 @@ async function handleCodexNotification(method: string, params: any) {
   if (typeof threadId !== "string") return;
   const identity = await loadIdentity();
   const session = identity?.sessions?.[threadId];
-  if (!identity || !session) return;
+  const aside = asideRuns.get(threadId);
+  if (!identity || (!session && !aside)) return;
+  const relaySession = session ?? aside!.session;
   if (method === "turn/started") activeTurns.add(threadId);
   if (method === "turn/completed") {
     activeTurns.delete(threadId);
-    await publish(identity, session, { kind: "state", state: "complete", progress: 1, latestUpdate: "Codex finished this turn.", agentCount: 0 });
+    if (aside) {
+      if (!aside.emittedReply) {
+        await publish(identity, relaySession, {
+          kind: "message", message: {
+            id: randomUUID(), role: "hammy", isAside: true, timestamp: new Date().toISOString(),
+            text: "Hammy's separate quick-answer turn ended without a reply. Please try that aside again.",
+          },
+        });
+      }
+      asideRuns.delete(threadId);
+    } else {
+      await publish(identity, relaySession, { kind: "state", state: "complete", progress: 1, latestUpdate: "Codex finished this turn.", agentCount: 0 });
+    }
     return;
   }
   if (method === "item/agentMessage/delta") {
-    await publish(identity, session, { kind: "state", state: "typing", progress: 0.72, latestUpdate: "Codex is drafting a response.", agentCount: 0 });
+    if (!aside) await publish(identity, relaySession, { kind: "state", state: "typing", progress: 0.72, latestUpdate: "Codex is drafting a response.", agentCount: 0 });
     return;
   }
   if (method === "item/completed" && /agentmessage/i.test(String(params?.item?.type ?? ""))) {
     const text = nestedText(params?.item);
-    if (text) await publish(identity, session, {
-      kind: "message", message: { id: randomUUID(), role: "assistant", text, timestamp: new Date().toISOString(), isAside: false },
-    });
+    if (text) {
+      if (aside) aside.emittedReply = true;
+      await publish(identity, relaySession, {
+        kind: "message", message: { id: randomUUID(), role: aside ? "hammy" : "assistant", text, timestamp: new Date().toISOString(), isAside: Boolean(aside) },
+      });
+    }
     return;
   }
   if (method === "item/started") {
+    if (aside) return;
     const type = String(params?.item?.type ?? "").toLowerCase();
     const state = type.includes("reason") ? "thinking" : type.includes("command") ? "typing" : "thinking";
-    await publish(identity, session, { kind: "state", state, progress: 0.22, latestUpdate: "Codex is working through the next step.", agentCount: 0 });
+    await publish(identity, relaySession, { kind: "state", state, progress: 0.22, latestUpdate: "Codex is working through the next step.", agentCount: 0 });
   }
+}
+
+async function handleCodexServerRequest(method: string, id: number, params: any) {
+  const threadId = params?.threadId;
+  if (typeof threadId !== "string") { codex.respond(id, { decision: "decline" }); return; }
+  if (method === "item/commandExecution/requestApproval" || method === "item/fileChange/requestApproval") {
+    pendingApprovals.set(threadId, { id, method });
+    const identity = await loadIdentity();
+    const session = identity?.sessions?.[threadId];
+    if (identity && session) {
+      await publish(identity, session, {
+        kind: "state", state: "waitingApproval", progress: 0.76,
+        latestUpdate: params?.reason ?? "Codex is waiting for your approval before it changes anything.", agentCount: 0,
+      }, "attention");
+    }
+    return;
+  }
+  // Hammy never broadens sandbox permissions or answers arbitrary server requests on the user's behalf.
+  codex.respond(id, method === "item/permissions/requestApproval" ? { permissions: [] } : { decision: "decline" });
 }
 
 async function consumePhonePrompts() {
@@ -402,13 +475,25 @@ async function consumePhonePrompts() {
           await codex.request("turn/start", { threadId, input: [{ type: "text", text }] });
         }
       }
+      if (payload?.kind === "approval") {
+        const approval = pendingApprovals.get(threadId);
+        if (approval) {
+          codex.respond(approval.id, { decision: "accept" });
+          pendingApprovals.delete(threadId);
+          await publish(identity, session, { kind: "state", state: "typing", progress: 0.78, latestUpdate: "Approved on your iPhone — Codex is continuing.", agentCount: 0 });
+        }
+      }
       if (payload?.kind === "aside" && typeof text === "string" && text.trim()) {
-        await publish(identity, session, {
-          kind: "message", message: {
-            id: randomUUID(), role: "hammy", isAside: true, timestamp: new Date().toISOString(),
-            text: "Hammy received your aside. Companion-side asides are kept out of the main Codex turn.",
-          },
-        });
+        try {
+          await startAside(identity, session, text);
+        } catch (error: any) {
+          await publish(identity, session, {
+            kind: "message", message: {
+              id: randomUUID(), role: "hammy", isAside: true, timestamp: new Date().toISOString(),
+              text: `Hammy couldn't start the separate quick-answer turn: ${error?.message ?? "unknown error"}`,
+            },
+          });
+        }
       }
     }
   }
@@ -416,6 +501,7 @@ async function consumePhonePrompts() {
 }
 
 codex.onNotification = (method, params) => { void handleCodexNotification(method, params).catch(() => undefined); };
+codex.onServerRequest = (method, id, params) => { void handleCodexServerRequest(method, id, params).catch(() => codex.respond(id, { decision: "decline" })); };
 
 function createWindow(): void {
   const window = new BrowserWindow({

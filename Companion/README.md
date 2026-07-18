@@ -42,4 +42,4 @@ hammy-companion serve
 
 In the desktop app, choose **Pair an iPhone** after signing in. It creates a 12-character, one-time code valid for ten minutes. Hammy uses that code to create a new iOS relay device; the companion signs its approval locally, and only then does the iPhone receive its own relay token and recipient-bound session keys. The pairing code is not a ChatGPT credential.
 
-The relay endpoint defaults to `https://backend.yzycoin.app`; override it with `HAMMY_RELAY_URL` if needed. The companion translates local app-server thread events into signed, end-to-end encrypted relay envelopes. Keep Codex app-server on local stdio or an authenticated loopback socket.
+The relay endpoint defaults to `https://backend.yzycoin.app`; override it with `HAMMY_RELAY_URL` if needed. The companion translates local app-server thread events into signed, end-to-end encrypted relay envelopes. An iPhone main prompt continues the real thread; a `/btw` aside starts an isolated, read-only, ephemeral Codex thread. Command and file-change approvals wait for the paired iPhone and are never auto-approved. Keep Codex app-server on local stdio or an authenticated loopback socket.

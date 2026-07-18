@@ -1,4 +1,3 @@
-import PhotosUI
 import SwiftUI
 
 struct ChatDetailView: View {
@@ -11,7 +10,6 @@ struct ChatDetailView: View {
     @State private var asideText = ""
     @State private var showHammyThought = false
     @State private var isAskingHammy = false
-    @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var sendError: String?
 
     var body: some View {
@@ -54,8 +52,6 @@ struct ChatDetailView: View {
                 ScrollView {
                     LazyVStack(spacing: 13) {
                         sessionHeader(session)
-                        permissionChips(session)
-
                         if session.state == .waitingApproval {
                             approvalCard(session)
                         }
@@ -130,20 +126,6 @@ struct ChatDetailView: View {
         .glassCard(cornerRadius: 24, padding: 16)
     }
 
-    private func permissionChips(_ session: ChatSession) -> some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                PermissionChip(title: "Commands", systemImage: "terminal.fill", isEnabled: session.commandsAllowed)
-                PermissionChip(title: "Plugins", systemImage: "puzzlepiece.extension.fill", isEnabled: session.pluginsAllowed)
-                PermissionChip(title: "Photos", systemImage: "photo.fill", isEnabled: true)
-                PermissionChip(title: session.model.rawValue, systemImage: "cpu.fill", isEnabled: true)
-                PermissionChip(title: session.intelligence.rawValue, systemImage: "brain.head.profile.fill", isEnabled: true)
-            }
-            .padding(.horizontal, 2)
-        }
-        .scrollIndicators(.hidden)
-    }
-
     private func approvalCard(_ session: ChatSession) -> some View {
         HStack(spacing: 13) {
             Image(systemName: "hand.raised.fill")
@@ -159,9 +141,15 @@ struct ChatDetailView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("Approve in Companion")
-                .font(.caption.bold())
-                .foregroundStyle(.orange)
+            Button("Approve") {
+                sendError = nil
+                Task {
+                    do { try await store.approve(sessionID: session.id) }
+                    catch { sendError = error.localizedDescription }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
         }
         .glassCard(cornerRadius: 20, padding: 13)
     }
@@ -207,22 +195,6 @@ struct ChatDetailView: View {
             }
 
             HStack(alignment: .bottom, spacing: 9) {
-                PhotosPicker(selection: $selectedPhotos, maxSelectionCount: 4, matching: .images) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.title3)
-                            .frame(width: 37, height: 37)
-                        if !selectedPhotos.isEmpty {
-                            Text("\(selectedPhotos.count)")
-                                .font(.system(size: 9, weight: .black))
-                                .foregroundStyle(.white)
-                                .frame(width: 16, height: 16)
-                                .background(Color.hammyBlue, in: Circle())
-                        }
-                    }
-                }
-                .foregroundStyle(.secondary)
-
                 TextField("Continue the main session…", text: $mainText, axis: .vertical)
                     .lineLimit(1...5)
                     .submitLabel(.send)
@@ -254,50 +226,6 @@ struct ChatDetailView: View {
 
     private func controlsMenu(_ session: ChatSession) -> some View {
         Menu {
-            Section("Model") {
-                ForEach(ModelChoice.allCases) { model in
-                    Button {
-                        store.setModel(model, sessionID: session.id)
-                    } label: {
-                        if model == session.model {
-                            Label(model.rawValue, systemImage: "checkmark")
-                        } else {
-                            Text(model.rawValue)
-                        }
-                    }
-                }
-            }
-            Section("Intelligence") {
-                ForEach(IntelligenceLevel.allCases) { level in
-                    Button {
-                        store.setIntelligence(level, sessionID: session.id)
-                    } label: {
-                        if level == session.intelligence {
-                            Label(level.rawValue, systemImage: "checkmark")
-                        } else {
-                            Text(level.rawValue)
-                        }
-                    }
-                }
-            }
-            Section("Permissions") {
-                Button {
-                    store.toggleCommands(sessionID: session.id)
-                } label: {
-                    Label(
-                        session.commandsAllowed ? "Disable commands" : "Allow commands",
-                        systemImage: "terminal"
-                    )
-                }
-                Button {
-                    store.togglePlugins(sessionID: session.id)
-                } label: {
-                    Label(
-                        session.pluginsAllowed ? "Disable plugins" : "Allow plugins",
-                        systemImage: "puzzlepiece.extension"
-                    )
-                }
-            }
             Button {
                 Task { await store.startLiveActivity(sessionID: session.id) }
             } label: {
@@ -318,7 +246,6 @@ struct ChatDetailView: View {
             do { try await store.sendMainPrompt(text, to: sessionID) }
             catch { sendError = error.localizedDescription }
         }
-        selectedPhotos.removeAll()
     }
 
     private func sendAside() {

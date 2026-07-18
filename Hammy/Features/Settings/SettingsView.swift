@@ -27,8 +27,6 @@ struct SettingsView: View {
         .onChange(of: store.appearance) { _, _ in store.persistPreferences() }
         .onChange(of: store.hammyColor) { _, _ in store.persistPreferences() }
         .onChange(of: store.personality) { _, _ in store.persistPreferences() }
-        .onChange(of: store.commandsAllowed) { _, _ in store.persistPreferences() }
-        .onChange(of: store.pluginsAllowed) { _, _ in store.persistPreferences() }
         .onChange(of: store.bridgeURL) { _, _ in store.persistPreferences() }
     }
 
@@ -104,7 +102,7 @@ struct SettingsView: View {
 
     private var personalityCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionTitle(title: "Personality", subtitle: "This shapes Hammy’s quick asides and status notes")
+            SectionTitle(title: "Personality", subtitle: "How Hammy looks and speaks inside this app")
             ForEach(HammyPersonality.allCases) { personality in
                 Button {
                     store.personality = personality
@@ -167,15 +165,11 @@ struct SettingsView: View {
 
     private var permissionsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionTitle(title: "Permissions", subtitle: "Global defaults for new sessions")
-            Toggle(isOn: $store.commandsAllowed) {
-                Label("Allow command use", systemImage: "terminal.fill")
-            }
-            Toggle(isOn: $store.pluginsAllowed) {
-                Label("Allow plugin use", systemImage: "puzzlepiece.extension.fill")
-            }
+            SectionTitle(title: "Permissions", subtitle: "Codex asks before a command can continue")
 
-            Divider()
+            Label("Command approvals are sent to this iPhone", systemImage: "hand.raised.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             HStack {
                 Label("Notifications", systemImage: "bell.badge.fill")

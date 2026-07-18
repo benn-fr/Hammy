@@ -12,10 +12,7 @@ final class AppStore: ObservableObject {
     @Published var personality: HammyPersonality
     @Published var hammyColor: HammyColorChoice
     @Published var notificationsGranted = false
-    @Published var commandsAllowed: Bool
-    @Published var pluginsAllowed: Bool
     @Published var bridgeURL: String
-    @Published private(set) var usage = UsageSnapshot.empty
     @Published private(set) var connectionMessage = "Pair Hammy Companion to begin."
 
     let liveActivity = LiveActivityManager()
@@ -28,8 +25,6 @@ final class AppStore: ObservableObject {
         appearance = AppearanceMode(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         personality = HammyPersonality(rawValue: defaults.string(forKey: "personality") ?? "") ?? .cheerful
         hammyColor = HammyColorChoice(rawValue: defaults.string(forKey: "hammyColor") ?? "") ?? .cyan
-        commandsAllowed = defaults.object(forKey: "commandsAllowed") as? Bool ?? true
-        pluginsAllowed = defaults.object(forKey: "pluginsAllowed") as? Bool ?? true
         bridgeURL = defaults.string(forKey: "bridgeURL") ?? Self.productionRelayURL
     }
 
@@ -81,10 +76,16 @@ final class AppStore: ObservableObject {
                     SessionUpdate(sessionID: session.id, sessionTitle: session.title, text: $0.text, state: session.state, timestamp: $0.timestamp)
                 }
             }.sorted { $0.timestamp > $1.timestamp }
-            usage = UsageSnapshot.from(sessions: fresh)
             connectionMessage = fresh.isEmpty ? "Connected. Start a Codex session in Hammy Companion to see it here." : "Encrypted relay connected."
             if let featuredSession, previousByID[featuredSession.id]?.state != featuredSession.state {
-                await liveActivity.update(with: featuredSession)
+                if featuredSession.state == .waitingApproval {
+                    await NotificationService.shared.scheduleApprovalNeeded(for: featuredSession)
+                }
+                if liveActivity.isRunning {
+                    await liveActivity.update(with: featuredSession)
+                } else {
+                    await liveActivity.start(for: featuredSession)
+                }
             }
         } catch {
             connectionMessage = error.localizedDescription
@@ -116,24 +117,17 @@ final class AppStore: ObservableObject {
         await syncFromRelay()
     }
 
-    func setModel(_ model: ModelChoice, sessionID: UUID) { mutateSession(id: sessionID) { $0.model = model } }
-    func setIntelligence(_ intelligence: IntelligenceLevel, sessionID: UUID) { mutateSession(id: sessionID) { $0.intelligence = intelligence } }
-    func toggleCommands(sessionID: UUID) { mutateSession(id: sessionID) { $0.commandsAllowed.toggle() } }
-    func togglePlugins(sessionID: UUID) { mutateSession(id: sessionID) { $0.pluginsAllowed.toggle() } }
+    func approve(sessionID: UUID) async throws {
+        try await relay.approveCommand(in: sessionID)
+        await syncFromRelay()
+    }
 
     func persistPreferences() {
         defaults.set(appearance.rawValue, forKey: "appearance")
         defaults.set(personality.rawValue, forKey: "personality")
         defaults.set(hammyColor.rawValue, forKey: "hammyColor")
-        defaults.set(commandsAllowed, forKey: "commandsAllowed")
-        defaults.set(pluginsAllowed, forKey: "pluginsAllowed")
         defaults.set(bridgeURL, forKey: "bridgeURL")
     }
 
     func resetOnboarding() { defaults.set(false, forKey: "hasCompletedOnboarding") }
-
-    private func mutateSession(id: UUID, mutation: (inout ChatSession) -> Void) {
-        guard let index = sessions.firstIndex(where: { $0.id == id }) else { return }
-        mutation(&sessions[index])
-    }
 }

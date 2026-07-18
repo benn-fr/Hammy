@@ -2,7 +2,7 @@
 
 Hammy is a SwiftUI iOS companion for long-running Codex/ChatGPT-style work. It turns live session events into a friendly robot status display across the app, notifications, the Lock Screen, and Dynamic Island.
 
-The project is a polished, runnable prototype. The interface, ActivityKit integration, notification flow, state model, demo history, settings, and tests are implemented. Account sign-in and real session data intentionally remain behind a bridge boundary; the app never pretends that a public consumer ChatGPT-history API exists.
+Hammy is a companion-backed app: Codex signs in on the user's own computer, while the iPhone receives only encrypted session updates and a device-specific relay token. The app deliberately does not pretend that a public consumer ChatGPT-history API exists.
 
 ## Open the project
 
@@ -22,14 +22,14 @@ xcodegen generate
 - Animated, photo-derived Hammy character with waving, floating, thinking, typing, compacting, delegating, approval-waiting, and completion treatments.
 - Fast typewriter onboarding using the requested copy and Core Haptics-style feedback through UIKit impact generators.
 - System appearance by default, with explicit light and dark overrides in Settings.
-- Notification authorization and an approval-needed local notification demo.
+- Notification authorization and local approval-needed notifications.
 - A real ActivityKit Live Activity and WidgetKit extension.
 - Lock Screen layout with progress/update content on the left and Hammy's current state on the right.
 - Dynamic Island expanded, compact, and minimal regions.
 - Active sessions, previous sessions, and a chronological update feed.
-- Chat detail with model, reasoning, photo, plugin, and command controls.
-- A separate `/btw`-style Hammy aside composer that does not mutate the main session's progress.
-- Hammy appearance, color, personality, permission defaults, bridge, and split usage settings.
+- Chat detail with encrypted main-prompt continuation, explicit command approval, and a real `/btw`-style aside composer. Asides run in an isolated, read-only Codex thread, so they cannot change the main thread.
+- Hammy appearance, color, personality, notifications, and companion-connection settings.
+- Real sessions and update history only: no seeded sessions, token estimates, or nonfunctional upload/model/plugin controls.
 - Three unit tests and two end-to-end UI tests.
 - A multi-user E2EE relay backend with device trust, PostgreSQL row-level security, and WebSocket event delivery.
 
@@ -50,7 +50,7 @@ Hammy uses a paired desktop companion for sign-in. The companion starts local Co
 
 The repository now includes the authenticated multi-user relay under `Backend/`. A trusted desktop companion still owns Codex authentication and plaintext processing, then E2EE-encrypts updates before sending them through the relay. The companion can integrate with the [Codex app server](https://learn.chatgpt.com/docs/app-server), which supplies thread lifecycle, streamed item events, tool progress, and approvals. The documented ChatGPT sign-in flow applies to supported Codex surfaces; see [Codex authentication](https://learn.chatgpt.com/docs/auth).
 
-The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. A paired companion publishes signed E2EE session metadata and progress events; iOS decrypts those envelopes locally. It does not ship demo sessions or token estimates.
+The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. A paired companion publishes signed E2EE session metadata and progress events; iOS decrypts those envelopes locally. It does not ship demo sessions, token estimates, or controls that only change the screen.
 
 The relay, threat model, and versioned cryptographic protocol are documented in `Backend/README.md`, `Backend/THREAT_MODEL.md`, and `Backend/PROTOCOL.md`. The official app-server WebSocket listener is currently experimental, so the trusted companion should prefer local stdio and must never expose a workstation listener directly to the internet.
 
