@@ -97,7 +97,7 @@ struct OnboardingView: View {
                         Image(systemName: "sparkles")
                             .font(.headline)
                     }
-                    Text(authInProgress ? "Pairing securely…" : "Pair with Hammy Companion")
+                    Text(authInProgress ? "Waiting for companion…" : "Pair with Hammy Companion")
                         .font(.headline)
                     Spacer()
                     Image(systemName: "arrow.right")
@@ -120,18 +120,29 @@ struct OnboardingView: View {
             .disabled(authInProgress || !introFinished)
             .opacity(introFinished ? 1 : 0.55)
 
-            TextField("12-character pairing code", text: $pairingCode)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .font(.system(.headline, design: .monospaced))
-                .multilineTextAlignment(.center)
+            if !pairingCode.isEmpty {
+                VStack(spacing: 7) {
+                    Text("Enter this code in Hammy Companion")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(pairingCode)
+                        .font(.system(.title2, design: .monospaced, weight: .bold))
+                        .tracking(3)
+                        .foregroundStyle(Color.hammyCyan)
+                    Text("This request expires in 10 minutes. Hammy will finish automatically once your companion confirms it.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
                 .padding(.horizontal, 14)
-                .frame(height: 52)
+                .padding(.vertical, 13)
+                .frame(maxWidth: .infinity)
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 17, style: .continuous)
-                        .stroke(pairingError == nil ? Color.hammyCyan.opacity(0.24) : Color.red.opacity(0.6), lineWidth: 1)
+                        .stroke(Color.hammyCyan.opacity(0.35), lineWidth: 1)
                 }
+            }
 
             if let pairingError {
                 Text(pairingError)
@@ -140,7 +151,7 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Label("1. Sign in to ChatGPT in Hammy Companion.  2. Tap Pair an iPhone.  3. Enter its one-time code here.", systemImage: "lock.shield.fill")
+            Label("1. Start pairing here.  2. Open the signed-in companion anywhere.  3. Enter this same one-time code there. Your phone receives a separate encrypted-relay authorization after approval.", systemImage: "lock.shield.fill")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -256,12 +267,21 @@ struct OnboardingView: View {
         pairingError = nil
         Task {
             do {
-                try await store.pairWithCompanion(code: pairingCode)
-                authInProgress = false
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.84)) {
-                    stage = .permissions
+                pairingCode = try await store.startRemotePairing()
+                for _ in 0..<120 {
+                    if try await store.finishRemotePairingIfReady() {
+                        authInProgress = false
+                        withAnimation(.spring(response: 0.55, dampingFraction: 0.84)) {
+                            stage = .permissions
+                        }
+                        await store.requestNotificationPermission()
+                        return
+                    }
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
-                await store.requestNotificationPermission()
+                authInProgress = false
+                pairingError = "The pairing request expired. Start a new request and enter its new code in Hammy Companion."
+                pairingCode = ""
             } catch {
                 authInProgress = false
                 pairingError = error.localizedDescription

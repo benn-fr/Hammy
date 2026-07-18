@@ -5,6 +5,7 @@ import type {
   EncryptedEventRecord,
   KeyPackageRecord,
   PairingRecord,
+  PairingLobbyRecord,
   RelaySessionRecord,
   UserRecord,
 } from "../types.js";
@@ -111,6 +112,24 @@ function mapPairing(row: Row): PairingRecord {
     expiresAt: iso(row.expires_at),
     claimedAt: row.claimed_at ? iso(row.claimed_at) : null,
     consumedAt: row.consumed_at ? iso(row.consumed_at) : null,
+  };
+}
+
+function mapPairingLobby(row: Row): PairingLobbyRecord {
+  return {
+    id: String(row.id),
+    codeHash: String(row.code_hash),
+    deviceName: String(row.device_name),
+    devicePlatform: row.device_platform as PairingLobbyRecord["devicePlatform"],
+    agreementPublicKey: String(row.agreement_public_key),
+    signingPublicKey: String(row.signing_public_key),
+    userId: row.user_id ? String(row.user_id) : null,
+    creatorDeviceId: row.creator_device_id ? String(row.creator_device_id) : null,
+    claimedDeviceId: row.claimed_device_id ? String(row.claimed_device_id) : null,
+    expiresAt: iso(row.expires_at),
+    claimedAt: row.claimed_at ? iso(row.claimed_at) : null,
+    consumedAt: row.consumed_at ? iso(row.consumed_at) : null,
+    createdAt: iso(row.created_at),
   };
 }
 
@@ -456,6 +475,98 @@ export class PostgresStore implements Store {
       if (device.rows[0]?.trust_state !== "trusted") return null;
       const updated = await client.query<Row>("UPDATE pairings SET consumed_at = now() WHERE id = $1 RETURNING *", [pairing.id]);
       return updated.rows[0] ? mapPairing(updated.rows[0]) : null;
+    });
+  }
+
+  async createPairingLobby(input: {
+    id: string;
+    codeHash: string;
+    device: DeviceInput;
+    expiresAt: string;
+  }): Promise<PairingLobbyRecord> {
+    return this.withPairingCode(input.codeHash, async (client) => {
+      const result = await client.query<Row>(
+        `INSERT INTO pairing_lobbies (id, code_hash, device_name, device_platform, agreement_public_key, signing_public_key, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [input.id, input.codeHash, input.device.name, input.device.platform, input.device.agreementPublicKey, input.device.signingPublicKey, input.expiresAt],
+      );
+      const row = result.rows[0];
+      if (!row) throw new Error("Failed to create pairing lobby");
+      return mapPairingLobby(row);
+    });
+  }
+
+  async listOpenPairingLobbies(): Promise<Array<Pick<PairingLobbyRecord, "id" | "expiresAt" | "createdAt">>> {
+    const result = await this.pool.query<Row>(
+      `SELECT id, expires_at, created_at FROM pairing_lobbies
+       WHERE claimed_device_id IS NULL AND consumed_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 20`,
+    );
+    return result.rows.map((row) => ({ id: String(row.id), expiresAt: iso(row.expires_at), createdAt: iso(row.created_at) }));
+  }
+
+  async claimPairingLobby(input: {
+    lobbyId: string;
+    codeHash: string;
+    userId: string;
+    creatorDeviceId: string;
+  }): Promise<PairingLobbyRecord | null> {
+    return this.withPairingCode(input.codeHash, async (client) => {
+      const selected = await client.query<Row>(
+        `SELECT * FROM pairing_lobbies
+         WHERE id = $1 AND code_hash = $2 AND claimed_device_id IS NULL AND consumed_at IS NULL AND expires_at > now()
+         FOR UPDATE`,
+        [input.lobbyId, input.codeHash],
+      );
+      const row = selected.rows[0];
+      if (!row) return null;
+      const lobby = mapPairingLobby(row);
+      await client.query("SELECT set_config('app.current_user_id', $1, true)", [input.userId]);
+      const duplicate = await client.query<Row>(
+        `SELECT id FROM devices WHERE user_id = $1 AND (signing_public_key = $2 OR agreement_public_key = $3) LIMIT 1`,
+        [input.userId, lobby.signingPublicKey, lobby.agreementPublicKey],
+      );
+      if (duplicate.rows[0]) throw new ConflictError("Device keys are already registered");
+      const created = await client.query<Row>(
+        `INSERT INTO devices (user_id, name, platform, agreement_public_key, signing_public_key, trust_state)
+         VALUES ($1, $2, $3, $4, $5, 'pending') RETURNING *`,
+        [input.userId, lobby.deviceName, lobby.devicePlatform, lobby.agreementPublicKey, lobby.signingPublicKey],
+      );
+      const pending = created.rows[0];
+      if (!pending) throw new Error("Failed to create paired device");
+      const updated = await client.query<Row>(
+        `UPDATE pairing_lobbies SET user_id = $2, creator_device_id = $3, claimed_device_id = $4, claimed_at = now()
+         WHERE id = $1 RETURNING *`,
+        [input.lobbyId, input.userId, input.creatorDeviceId, pending.id],
+      );
+      return updated.rows[0] ? mapPairingLobby(updated.rows[0]) : null;
+    });
+  }
+
+  async getPairingLobby(userId: string, lobbyId: string): Promise<PairingLobbyRecord | null> {
+    return this.withTenant(userId, async (client) => {
+      const result = await client.query<Row>("SELECT * FROM pairing_lobbies WHERE id = $1 AND user_id = $2", [lobbyId, userId]);
+      return result.rows[0] ? mapPairingLobby(result.rows[0]) : null;
+    });
+  }
+
+  async consumePairingLobby(lobbyId: string, codeHash: string): Promise<PairingLobbyRecord | null> {
+    return this.withPairingCode(codeHash, async (client) => {
+      const selected = await client.query<Row>(
+        `SELECT * FROM pairing_lobbies
+         WHERE id = $1 AND code_hash = $2 AND consumed_at IS NULL AND expires_at > now()
+         FOR UPDATE`,
+        [lobbyId, codeHash],
+      );
+      const row = selected.rows[0];
+      if (!row) return null;
+      const lobby = mapPairingLobby(row);
+      if (!lobby.userId || !lobby.claimedDeviceId) return null;
+      await client.query("SELECT set_config('app.current_user_id', $1, true)", [lobby.userId]);
+      const device = await client.query<Row>("SELECT trust_state FROM devices WHERE id = $1 AND user_id = $2", [lobby.claimedDeviceId, lobby.userId]);
+      if (device.rows[0]?.trust_state !== "trusted") return null;
+      const updated = await client.query<Row>("UPDATE pairing_lobbies SET consumed_at = now() WHERE id = $1 RETURNING *", [lobby.id]);
+      return updated.rows[0] ? mapPairingLobby(updated.rows[0]) : null;
     });
   }
 

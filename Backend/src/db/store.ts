@@ -7,6 +7,7 @@ import type {
   KeyPackageRecord,
   NotificationHint,
   PairingRecord,
+  PairingLobbyRecord,
   RelaySessionRecord,
   SignedCiphertext,
   UserRecord,
@@ -79,6 +80,22 @@ export interface Store {
   getPairing(userId: string, pairingId: string): Promise<PairingRecord | null>;
   getPairingByCode(pairingId: string, codeHash: string): Promise<PairingRecord | null>;
   consumePairing(pairingId: string, codeHash: string): Promise<PairingRecord | null>;
+
+  createPairingLobby(input: {
+    id: string;
+    codeHash: string;
+    device: DeviceInput;
+    expiresAt: string;
+  }): Promise<PairingLobbyRecord>;
+  listOpenPairingLobbies(): Promise<Array<Pick<PairingLobbyRecord, "id" | "expiresAt" | "createdAt">>>;
+  claimPairingLobby(input: {
+    lobbyId: string;
+    codeHash: string;
+    userId: string;
+    creatorDeviceId: string;
+  }): Promise<PairingLobbyRecord | null>;
+  getPairingLobby(userId: string, lobbyId: string): Promise<PairingLobbyRecord | null>;
+  consumePairingLobby(lobbyId: string, codeHash: string): Promise<PairingLobbyRecord | null>;
 
   createRelaySession(input: {
     id: string;

@@ -278,6 +278,52 @@ describe("multi-user encrypted relay API", () => {
     expect(usable.statusCode).toBe(200);
   });
 
+  it("lets a phone announce a remote pairing lobby and receives only a scoped relay authorization after approval", async () => {
+    const { app } = await makeApp();
+    const companion = await register(app, "remote-pair@example.com");
+    const iphoneKeys = generateDeviceKeys();
+    const opened = await app.inject({
+      method: "POST", url: "/v1/pairing-lobbies", payload: {
+        device: {
+          name: "Remote iPhone", platform: "ios",
+          agreementPublicKey: iphoneKeys.agreementPublicKey, signingPublicKey: iphoneKeys.signingPublicKey,
+        },
+      },
+    });
+    expect(opened.statusCode).toBe(201);
+    const lobby = opened.json<{ lobbyId: string; code: string }>();
+    expect(lobby.code).toMatch(/^[A-HJ-NP-Z2-9]{12}$/);
+
+    const discovered = await app.inject({
+      method: "GET", url: "/v1/pairing-lobbies", headers: authorization(companion.account.tokens.accessToken),
+    });
+    expect(discovered.statusCode).toBe(200);
+    expect(discovered.json<{ lobbies: Array<{ id: string }> }>().lobbies.map((item) => item.id)).toContain(lobby.lobbyId);
+    expect(discovered.body).not.toContain("Remote iPhone");
+    expect(discovered.body).not.toContain(iphoneKeys.agreementPublicKey);
+
+    const claimed = await app.inject({
+      method: "POST", url: `/v1/pairing-lobbies/${lobby.lobbyId}/claim`, headers: authorization(companion.account.tokens.accessToken),
+      payload: { code: lobby.code },
+    });
+    expect(claimed.statusCode).toBe(200);
+    const device = claimed.json<{ device: RegisteredAccount["device"] }>().device;
+    const signature = sign(null, deviceApprovalPayload({
+      userId: companion.account.user.id, approverDeviceId: companion.account.device.id,
+      pendingDeviceId: device.id, pendingAgreementPublicKey: device.agreementPublicKey, pendingSigningPublicKey: device.signingPublicKey,
+    }), createPrivateKey(companion.keys.signingPrivateKeyPEM)).toString("base64url");
+    const approved = await app.inject({
+      method: "POST", url: `/v1/devices/${device.id}/approve`, headers: authorization(companion.account.tokens.accessToken), payload: { signature },
+    });
+    expect(approved.statusCode).toBe(200);
+
+    const completed = await app.inject({ method: "GET", url: `/v1/pairing-lobbies/${lobby.lobbyId}/complete?code=${lobby.code}` });
+    expect(completed.statusCode).toBe(200);
+    const phoneAuthorization = completed.json<{ tokens: { accessToken: string } }>().tokens.accessToken;
+    const usable = await app.inject({ method: "GET", url: "/v1/sessions", headers: authorization(phoneAuthorization) });
+    expect(usable.statusCode).toBe(200);
+  });
+
   it("delivers a signed session-key package only to its intended device", async () => {
     const { app } = await makeApp();
     const primary = await register(app, "keys@example.com");

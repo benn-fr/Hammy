@@ -134,6 +134,14 @@ export const pairingCodeQuerySchema = z.object({
   code: pairingCodeSchema,
 }).strict();
 
+export const createPairingLobbySchema = z.object({
+  device: deviceInputSchema,
+}).strict();
+
+export const claimPairingLobbySchema = z.object({
+  code: pairingCodeSchema,
+}).strict();
+
 export function assertClientTimestamp(value: string): void {
   const timestamp = new Date(value).getTime();
   const now = Date.now();

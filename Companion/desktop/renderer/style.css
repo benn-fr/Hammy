@@ -17,6 +17,7 @@ button:hover { background: #17364a; } button.primary { background: linear-gradie
 .pair-card strong { color: #fff; font-size: 2rem; letter-spacing: .15em; }
 .prompt-card { display: grid; gap: 10px; margin: 18px 0; padding: 16px; border-radius: 15px; border: 1px solid #31536a; background: #0b1c28; }
 .prompt-card label { font-weight: 800; color: #c7dfeb; }
-textarea { resize: vertical; min-height: 70px; border: 1px solid #31536a; border-radius: 12px; padding: 12px; color: inherit; background: #061018; font: inherit; }
+textarea, input, select { resize: vertical; min-height: 48px; border: 1px solid #31536a; border-radius: 12px; padding: 12px; color: inherit; background: #061018; font: inherit; }
+textarea { min-height: 70px; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 150px; padding: 18px; border-radius: 16px; background: #061018; border: 1px solid #1c3a4d; color: #c7dfeb; }
 @media (max-width: 520px) { main { padding: 36px 20px; } .actions { grid-template-columns: 1fr; } }

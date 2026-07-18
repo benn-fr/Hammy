@@ -1,13 +1,26 @@
 const status = document.querySelector("#status");
 const code = document.querySelector("#code");
 const output = document.querySelector("#output");
+const pairing = document.querySelector("#pairing");
+const pairingLobby = document.querySelector("#pairing-lobby");
+const pairingCode = document.querySelector("#pairing-code");
+const tailnet = document.querySelector("#tailnet");
 const setOutput = (text) => { output.textContent = text; };
 
 async function refreshStatus() {
   const result = await window.hammy.status();
-  status.textContent = result.signedIn
+  status.textContent = !result.cliReady
+    ? "Codex CLI is not installed"
+    : result.signedIn
     ? `Codex is signed in${result.plan ? ` · ${result.plan}` : ""}${result.paired ? " · relay ready" : ""}`
     : "Codex is not signed in";
+  if (result.error) setOutput(result.error);
+}
+
+async function refreshTailnet() {
+  const result = await window.hammy.tailscale();
+  const peers = result.peers.length ? ` Online peers: ${result.peers.map((peer) => peer.name).join(", ")}.` : "";
+  tailnet.textContent = `${result.message}${peers}`;
 }
 
 document.querySelector("#login").onclick = async () => {
@@ -28,26 +41,35 @@ document.querySelector("#status-button").onclick = async () => {
 };
 
 document.querySelector("#pair").onclick = async () => {
-  setOutput("Creating a one-time pairing code…");
+  setOutput("Looking for secure pairing requests from Hammy phones…");
   try {
-    const result = await window.hammy.pair();
-    const pairing = document.querySelector("#pairing");
     pairing.hidden = false;
-    pairing.querySelector("strong").textContent = result.code;
-    pairing.querySelector("small").textContent = `Expires ${new Date(result.expiresAt).toLocaleTimeString()}. Enter it in Hammy on your iPhone.`;
-    setOutput("Waiting for Hammy to claim this code. Keep this companion open; it will approve only the iPhone that proves knowledge of the code.");
-    const poll = async () => {
-      try {
-        const update = await window.hammy.pairingStatus(result.pairingId);
-        if (update.state === "approved") {
-          setOutput(`${update.deviceName} is paired and trusted. Your iPhone can now decrypt relay updates.`);
-          await refreshStatus();
-          return;
-        }
-        if (update.state === "waiting") window.setTimeout(poll, 1500);
-      } catch (error) { setOutput(error.message); }
-    };
-    window.setTimeout(poll, 1200);
+    const result = await window.hammy.pairingLobbies();
+    pairingLobby.replaceChildren();
+    for (const lobby of result.lobbies) {
+      const option = document.createElement("option");
+      option.value = lobby.id;
+      option.textContent = `Waiting iPhone · expires ${new Date(lobby.expiresAt).toLocaleTimeString()}`;
+      pairingLobby.append(option);
+    }
+    if (result.lobbies.length) {
+      setOutput(`${result.lobbies.length} secure pairing request${result.lobbies.length === 1 ? "" : "s"} found. Enter the matching 12-character code from the iPhone to approve exactly that device.`);
+      pairingCode.focus();
+    } else {
+      setOutput("No iPhone pairing requests are waiting. Open Hammy on the phone, tap Pair with Hammy Companion, then choose this button again.");
+    }
+  } catch (error) { setOutput(error.message); }
+};
+
+document.querySelector("#approve-pairing").onclick = async () => {
+  try {
+    if (!pairingLobby.value) throw new Error("There is no waiting iPhone pairing request yet.");
+    setOutput("Confirming the code and creating the phone’s device authorization…");
+    const result = await window.hammy.claimPairingLobby(pairingLobby.value, pairingCode.value);
+    pairingCode.value = "";
+    pairing.hidden = true;
+    setOutput(`${result.deviceName} is paired and trusted. It can now receive its own encrypted-relay authorization and decrypt your shared sessions.`);
+    await refreshStatus();
   } catch (error) { setOutput(error.message); }
 };
 
@@ -62,3 +84,4 @@ document.querySelector("#start-session").onclick = async () => {
 };
 
 refreshStatus().catch((error) => setOutput(error.message));
+refreshTailnet().catch((error) => { tailnet.textContent = error.message; });

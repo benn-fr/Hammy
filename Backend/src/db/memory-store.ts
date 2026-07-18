@@ -6,6 +6,7 @@ import type {
   KeyPackageRecord,
   LoginChallengeRecord,
   PairingRecord,
+  PairingLobbyRecord,
   RelaySessionRecord,
   UserRecord,
 } from "../types.js";
@@ -19,6 +20,7 @@ export class MemoryStore implements Store {
   private readonly authSessions = new Map<string, AuthSessionRecord>();
   private readonly loginChallenges = new Map<string, LoginChallengeRecord>();
   private readonly pairings = new Map<string, PairingRecord>();
+  private readonly pairingLobbies = new Map<string, PairingLobbyRecord>();
   private readonly relaySessions = new Map<string, RelaySessionRecord>();
   private readonly sessionKeyEpochs = new Map<string, Map<string, number>>();
   private readonly keyPackages = new Map<string, KeyPackageRecord>();
@@ -260,6 +262,80 @@ export class MemoryStore implements Store {
     if (!device || device.trustState !== "trusted") return null;
     const updated: PairingRecord = { ...pairing, consumedAt: new Date().toISOString() };
     this.pairings.set(updated.id, updated);
+    return updated;
+  }
+
+  async createPairingLobby(input: {
+    id: string;
+    codeHash: string;
+    device: DeviceInput;
+    expiresAt: string;
+  }): Promise<PairingLobbyRecord> {
+    const now = new Date().toISOString();
+    const lobby: PairingLobbyRecord = {
+      id: input.id,
+      codeHash: input.codeHash,
+      deviceName: input.device.name,
+      devicePlatform: input.device.platform,
+      agreementPublicKey: input.device.agreementPublicKey,
+      signingPublicKey: input.device.signingPublicKey,
+      userId: null,
+      creatorDeviceId: null,
+      claimedDeviceId: null,
+      expiresAt: input.expiresAt,
+      claimedAt: null,
+      consumedAt: null,
+      createdAt: now,
+    };
+    this.pairingLobbies.set(lobby.id, lobby);
+    return lobby;
+  }
+
+  async listOpenPairingLobbies(): Promise<Array<Pick<PairingLobbyRecord, "id" | "expiresAt" | "createdAt">>> {
+    const now = new Date();
+    return [...this.pairingLobbies.values()]
+      .filter((lobby) => !lobby.claimedDeviceId && !lobby.consumedAt && new Date(lobby.expiresAt) > now)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(({ id, expiresAt, createdAt }) => ({ id, expiresAt, createdAt }));
+  }
+
+  async claimPairingLobby(input: {
+    lobbyId: string;
+    codeHash: string;
+    userId: string;
+    creatorDeviceId: string;
+  }): Promise<PairingLobbyRecord | null> {
+    const lobby = this.pairingLobbies.get(input.lobbyId);
+    if (!lobby || lobby.codeHash !== input.codeHash || lobby.claimedDeviceId || lobby.consumedAt || new Date(lobby.expiresAt) <= new Date()) return null;
+    const pending = await this.createPendingDevice(input.userId, {
+      name: lobby.deviceName,
+      platform: lobby.devicePlatform,
+      agreementPublicKey: lobby.agreementPublicKey,
+      signingPublicKey: lobby.signingPublicKey,
+    });
+    const updated: PairingLobbyRecord = {
+      ...lobby,
+      userId: input.userId,
+      creatorDeviceId: input.creatorDeviceId,
+      claimedDeviceId: pending.id,
+      claimedAt: new Date().toISOString(),
+    };
+    this.pairingLobbies.set(updated.id, updated);
+    return updated;
+  }
+
+  async getPairingLobby(userId: string, lobbyId: string): Promise<PairingLobbyRecord | null> {
+    const lobby = this.pairingLobbies.get(lobbyId);
+    return lobby?.userId === userId ? lobby : null;
+  }
+
+  async consumePairingLobby(lobbyId: string, codeHash: string): Promise<PairingLobbyRecord | null> {
+    const lobby = this.pairingLobbies.get(lobbyId);
+    if (!lobby || lobby.codeHash !== codeHash || !lobby.userId || !lobby.claimedDeviceId || lobby.consumedAt || new Date(lobby.expiresAt) <= new Date()) return null;
+    const device = await this.getDevice(lobby.userId, lobby.claimedDeviceId);
+    if (!device || device.trustState !== "trusted") return null;
+    const updated: PairingLobbyRecord = { ...lobby, consumedAt: new Date().toISOString() };
+    this.pairingLobbies.set(updated.id, updated);
     return updated;
   }
 

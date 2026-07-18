@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain, safeStorage } from "electron";
+import { app, BrowserWindow, ipcMain, safeStorage, shell } from "electron";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createCipheriv, createDecipheriv, createPrivateKey, createPublicKey, diffieHellman, generateKeyPairSync, hkdfSync, randomBytes, randomUUID, sign, verify } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const relayURL = process.env.HAMMY_RELAY_URL ?? "https://backend.yzycoin.app";
@@ -25,29 +25,52 @@ type RelayIdentity = {
   sessions?: Record<string, ManagedSession>;
 };
 
-type ManagedSession = { relaySessionId: string; threadId: string; keyId: string; sessionKey: string; seenEventIDs: string[] };
+type ManagedSession = {
+  relaySessionId: string;
+  threadId: string;
+  keyId: string;
+  sessionKey: string;
+  seenEventIDs: string[];
+  mirroredItemIDs?: string[];
+};
 type AsideRun = { session: ManagedSession; emittedReply: boolean };
+type CommandResult = { stdout: string; stderr: string };
 
 type RPCResponse = { id?: number; method?: string; params?: any; result?: unknown; error?: { message?: string } };
 
 class CodexAppServer {
   private child: ChildProcessWithoutNullStreams | null = null;
+  private executable: string | null = null;
   private nextID = 1;
   private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (reason: Error) => void }>();
   onNotification: ((method: string, params: any) => void) | null = null;
   onServerRequest: ((method: string, id: number, params: any) => void) | null = null;
 
-  async request(method: string, params: unknown = {}): Promise<any> {
-    await this.start();
+  async request(method: string, params: unknown = {}, autoInstall = false): Promise<any> {
+    await this.start(autoInstall);
     const id = this.nextID++;
     const response = new Promise<unknown>((resolve, reject) => this.pending.set(id, { resolve, reject }));
     this.child!.stdin.write(`${JSON.stringify({ method, id, params })}\n`);
     return response;
   }
 
-  private async start(): Promise<void> {
+  async prepare(): Promise<void> {
+    await this.start(true);
+  }
+
+  async isAvailable(): Promise<boolean> {
+    try {
+      await this.resolveExecutable(false);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async start(autoInstall: boolean): Promise<void> {
     if (this.child) return;
-    this.child = spawn("codex", ["app-server", "--listen", "stdio://"], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    const executable = await this.resolveExecutable(autoInstall);
+    this.child = spawn(executable, ["app-server", "--listen", "stdio://"], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     this.child.once("error", (error) => this.rejectAll(new Error(`Codex CLI was not found: ${error.message}`)));
     this.child.once("exit", () => {
       this.child = null;
@@ -65,6 +88,30 @@ class CodexAppServer {
       clientInfo: { name: "hammy_companion", title: "Hammy Companion", version: app.getVersion() },
     });
     this.child.stdin.write(`${JSON.stringify({ method: "initialized", params: {} })}\n`);
+  }
+
+  private async resolveExecutable(autoInstall: boolean): Promise<string> {
+    if (this.executable && await canRun(this.executable, ["--version"])) return this.executable;
+    const pathCandidate = process.platform === "win32" ? "codex.cmd" : "codex";
+    if (await canRun(pathCandidate, ["--version"])) {
+      this.executable = pathCandidate;
+      return pathCandidate;
+    }
+    if (!autoInstall) throw new Error("Codex CLI is not installed. Choose “Sign in with ChatGPT” and Hammy will install it locally.");
+
+    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+    if (!await canRun(npm, ["--version"])) {
+      throw new Error("Hammy needs Node.js/npm to install Codex. Install the current Node.js LTS, reopen Hammy Companion, then sign in.");
+    }
+    await runCommand(npm, ["install", "--global", "@openai/codex"], 180_000);
+    const prefix = (await runCommand(npm, ["prefix", "--global"], 15_000)).stdout.trim();
+    const installed = process.platform === "win32" ? join(prefix, "codex.cmd") : join(prefix, "bin", "codex");
+    try { await access(installed); } catch {
+      throw new Error("Codex installed, but Hammy could not locate its executable. Restart Hammy Companion and try again.");
+    }
+    if (!await canRun(installed, ["--version"])) throw new Error("Codex installation completed but could not start. Restart Hammy Companion and try again.");
+    this.executable = installed;
+    return installed;
   }
 
   private receive(line: string) {
@@ -93,10 +140,34 @@ class CodexAppServer {
   }
 }
 
+async function runCommand(command: string, args: string[], timeoutMs: number): Promise<CommandResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+    let stdout = ""; let stderr = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`${command} did not finish in time.`));
+    }, timeoutMs);
+    child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
+    child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
+    child.once("error", (error) => { clearTimeout(timer); reject(error); });
+    child.once("exit", (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(stderr.trim() || `${command} exited with status ${code ?? "unknown"}.`));
+    });
+  });
+}
+
+async function canRun(command: string, args: string[]): Promise<boolean> {
+  try { await runCommand(command, args, 8_000); return true; } catch { return false; }
+}
+
 const codex = new CodexAppServer();
 const activeTurns = new Set<string>();
 const pendingApprovals = new Map<string, { id: number; method: string }>();
 const asideRuns = new Map<string, AsideRun>();
+let synchronizingCodex = false;
 
 function deviceKeys(): DeviceKeys {
   const agreement = generateKeyPairSync("x25519");
@@ -266,14 +337,24 @@ async function ensureRelayIdentity(): Promise<RelayIdentity> {
 }
 
 async function status() {
-  const result = await account();
-  const signedIn = result?.account?.type === "chatgpt";
-  const paired = signedIn && await loadIdentity().then(Boolean).catch(() => false);
-  return { signedIn, paired, plan: result?.account?.planType ?? null };
+  const cliReady = await codex.isAvailable();
+  if (!cliReady) return { cliReady: false, signedIn: false, paired: false, plan: null };
+  try {
+    const result = await account();
+    const signedIn = result?.account?.type === "chatgpt";
+    const paired = signedIn && await loadIdentity().then(Boolean).catch(() => false);
+    return { cliReady: true, signedIn, paired, plan: result?.account?.planType ?? null };
+  } catch (error: any) {
+    return { cliReady: true, signedIn: false, paired: false, plan: null, error: error?.message ?? "Codex could not be reached." };
+  }
 }
 
 async function beginLogin() {
+  // This is deliberately triggered by the user. It installs only the official
+  // Codex package, then keeps the resulting ChatGPT credential inside Codex.
+  await codex.prepare();
   const result = await codex.request("account/login/start", { type: "chatgptDeviceCode" });
+  if (result?.verificationUrl) await shell.openExternal(result.verificationUrl);
   return {
     verificationURL: result?.verificationUrl ?? null,
     userCode: result?.userCode ?? null,
@@ -295,9 +376,41 @@ async function pairingStatus(pairingId: string) {
     await fetchRelay(`/v1/devices/${encodeURIComponent(status.device.id)}/approve`, {
       method: "POST", body: JSON.stringify({ signature: approvalSignature(identity, status.device) }),
     }, identity.accessToken);
+    await shareSessionKeys(identity, status.device);
     return { state: "approved", deviceName: status.device.name };
   }
   return { state: status.device?.trustState ?? "waiting", deviceName: status.device?.name ?? null };
+}
+
+async function pairingLobbies() {
+  const identity = await ensureRelayIdentity();
+  const result = await fetchRelay("/v1/pairing-lobbies", {}, identity.accessToken) as { lobbies: Array<{ id: string; expiresAt: string; createdAt: string }> };
+  return { lobbies: result.lobbies, relayURL };
+}
+
+async function shareSessionKeys(identity: RelayIdentity, device: { id: string; agreementPublicKey: string }) {
+  for (const session of Object.values(identity.sessions ?? {})) {
+    await fetchRelay(`/v1/sessions/${session.relaySessionId}/keys/${device.id}`, {
+      method: "PUT", body: JSON.stringify({ envelope: wrapSessionKey(identity, session, device) }),
+    }, identity.accessToken);
+  }
+}
+
+async function claimPairingLobby(lobbyId: string, code: string) {
+  const identity = await ensureRelayIdentity();
+  const normalizedCode = code.toUpperCase().trim();
+  if (!/^[A-HJ-NP-Z2-9]{12}$/.test(normalizedCode)) throw new Error("Enter the 12-character code shown on the iPhone.");
+  const result = await fetchRelay(`/v1/pairing-lobbies/${encodeURIComponent(lobbyId)}/claim`, {
+    method: "POST", body: JSON.stringify({ code: normalizedCode }),
+  }, identity.accessToken) as { device: { id: string; name: string; agreementPublicKey: string; signingPublicKey: string; trustState: string } };
+  const device = result.device;
+  if (device.trustState === "pending") {
+    await fetchRelay(`/v1/devices/${encodeURIComponent(device.id)}/approve`, {
+      method: "POST", body: JSON.stringify({ signature: approvalSignature(identity, device) }),
+    }, identity.accessToken);
+  }
+  await shareSessionKeys(identity, device);
+  return { state: "approved", deviceName: device.name };
 }
 
 async function publish(identity: RelayIdentity, session: ManagedSession, payload: object, notificationHint = "generic") {
@@ -309,6 +422,97 @@ async function publish(identity: RelayIdentity, session: ManagedSession, payload
   await saveIdentity(identity);
 }
 
+async function createRelaySession(identity: RelayIdentity, threadId: string, details: {
+  title: string;
+  projectName: string;
+  promptPreview: string;
+}) {
+  identity.sessions ??= {};
+  const existing = identity.sessions[threadId];
+  if (existing) return existing;
+  const session: ManagedSession = {
+    relaySessionId: randomUUID(), threadId, keyId: `hammy.${randomUUID()}`,
+    sessionKey: b64(randomBytes(32)), seenEventIDs: [], mirroredItemIDs: [],
+  };
+  const metadata = encryptMetadata(identity, session, {
+    ...details, model: "Auto", intelligence: "Standard", commandsAllowed: true, pluginsAllowed: true,
+  });
+  await fetchRelay("/v1/sessions", { method: "POST", body: JSON.stringify({ id: session.relaySessionId, encryptedMetadata: metadata }) }, identity.accessToken);
+  const devices = await fetchRelay("/v1/devices", {}, identity.accessToken) as { devices: Array<{ id: string; agreementPublicKey: string; trustState: string }> };
+  for (const device of devices.devices.filter((item) => item.trustState === "trusted")) {
+    await fetchRelay(`/v1/sessions/${session.relaySessionId}/keys/${device.id}`, {
+      method: "PUT", body: JSON.stringify({ envelope: wrapSessionKey(identity, session, device) }),
+    }, identity.accessToken);
+  }
+  identity.sessions[threadId] = session;
+  await saveIdentity(identity);
+  return session;
+}
+
+function sessionDetailsFromThread(thread: any) {
+  const preview = typeof thread?.preview === "string" && thread.preview.trim()
+    ? thread.preview.trim()
+    : "Existing Codex session";
+  const cwd = typeof thread?.cwd === "string" ? thread.cwd : "";
+  return {
+    title: typeof thread?.name === "string" && thread.name.trim() ? thread.name.trim().slice(0, 120) : preview.slice(0, 88),
+    projectName: cwd ? basename(cwd) || cwd : "Codex CLI",
+    promptPreview: preview.slice(0, 240),
+  };
+}
+
+async function mirrorThreadSnapshot(identity: RelayIdentity, session: ManagedSession) {
+  let snapshot: any;
+  try { snapshot = await codex.request("thread/read", { threadId: session.threadId, includeTurns: true }); } catch { return; }
+  const turns = Array.isArray(snapshot?.turns) ? snapshot.turns : Array.isArray(snapshot?.thread?.turns) ? snapshot.thread.turns : [];
+  for (const turn of turns) {
+    const items = Array.isArray(turn?.items) ? turn.items : [];
+    for (const item of items) {
+      const type = String(item?.type ?? "").toLowerCase();
+      const role = type.includes("agentmessage") ? "assistant" : type.includes("usermessage") ? "user" : null;
+      if (!role) continue;
+      const itemId = typeof item?.id === "string" ? item.id : `${session.threadId}:${type}:${nestedText(item) ?? ""}`;
+      if (session.mirroredItemIDs?.includes(itemId)) continue;
+      const text = nestedText(item);
+      if (!text) continue;
+      await publish(identity, session, {
+        kind: "message", message: {
+          id: randomUUID(), role, text, timestamp: new Date().toISOString(), isAside: false,
+        },
+      });
+      session.mirroredItemIDs = [...(session.mirroredItemIDs ?? []), itemId].slice(-1_000);
+    }
+  }
+  await saveIdentity(identity);
+}
+
+async function syncCodexSessions() {
+  if (synchronizingCodex) return;
+  synchronizingCodex = true;
+  try {
+    const identity = await ensureRelayIdentity();
+    const result = await codex.request("thread/list", { limit: 100 });
+    const threads = Array.isArray(result?.data) ? result.data : Array.isArray(result?.threads) ? result.threads : [];
+    for (const thread of threads) {
+      const threadId = typeof thread?.id === "string" ? thread.id : null;
+      if (!threadId || thread?.ephemeral || thread?.parentThreadId) continue;
+      const isNew = !identity.sessions?.[threadId];
+      const session = await createRelaySession(identity, threadId, sessionDetailsFromThread(thread));
+      if (isNew) {
+        await publish(identity, session, {
+          kind: "state", state: "idle", progress: 0, latestUpdate: "Imported from your local Codex history.", agentCount: 0,
+        });
+      }
+      await mirrorThreadSnapshot(identity, session);
+    }
+  } catch {
+    // The companion is allowed to be signed out/offline; the UI surfaces that
+    // state and the next interval retries without losing local Codex data.
+  } finally {
+    synchronizingCodex = false;
+  }
+}
+
 async function startSession(prompt: string) {
   const cleaned = prompt.trim();
   if (!cleaned) throw new Error("Write a prompt first.");
@@ -316,25 +520,9 @@ async function startSession(prompt: string) {
   const started = await codex.request("thread/start", {});
   const threadId = started?.thread?.id;
   if (typeof threadId !== "string") throw new Error("Codex did not create a thread.");
-  const relaySessionId = randomUUID();
-  const session: ManagedSession = {
-    relaySessionId, threadId, keyId: `hammy.${randomUUID()}`,
-    sessionKey: b64(randomBytes(32)), seenEventIDs: [],
-  };
-  const metadata = encryptMetadata(identity, session, {
+  const session = await createRelaySession(identity, threadId, {
     title: "Codex session", projectName: "Hammy Companion", promptPreview: cleaned,
-    model: "Auto", intelligence: "Standard", commandsAllowed: true, pluginsAllowed: true,
   });
-  await fetchRelay("/v1/sessions", { method: "POST", body: JSON.stringify({ id: relaySessionId, encryptedMetadata: metadata }) }, identity.accessToken);
-  const devices = await fetchRelay("/v1/devices", {}, identity.accessToken) as { devices: Array<{ id: string; agreementPublicKey: string; trustState: string }> };
-  for (const device of devices.devices.filter((item) => item.trustState === "trusted")) {
-    await fetchRelay(`/v1/sessions/${relaySessionId}/keys/${device.id}`, {
-      method: "PUT", body: JSON.stringify({ envelope: wrapSessionKey(identity, session, device) }),
-    }, identity.accessToken);
-  }
-  identity.sessions ??= {};
-  identity.sessions[threadId] = session;
-  await saveIdentity(identity);
   await publish(identity, session, {
     kind: "state", state: "thinking", progress: 0.02, latestUpdate: "Codex is starting the turn.", agentCount: 0,
   });
@@ -342,7 +530,7 @@ async function startSession(prompt: string) {
     kind: "message", message: { id: randomUUID(), role: "user", text: cleaned, timestamp: new Date().toISOString(), isAside: false },
   });
   await codex.request("turn/start", { threadId, input: [{ type: "text", text: cleaned }] });
-  return { relaySessionId, threadId };
+  return { relaySessionId: session.relaySessionId, threadId };
 }
 
 async function startAside(identity: RelayIdentity, session: ManagedSession, text: string) {
@@ -471,6 +659,9 @@ async function consumePhonePrompts() {
         await publish(identity, session, { kind: "state", state: "thinking", progress: 0.04, latestUpdate: "Hammy delivered your prompt to Codex.", agentCount: 0 });
         if (activeTurns.has(threadId)) await codex.request("turn/steer", { threadId, input: [{ type: "text", text }] });
         else {
+          // Imported CLI threads are resumed only when the phone sends work, so
+          // merely mirroring history never changes the user's local session.
+          await codex.request("thread/resume", { threadId }).catch(() => undefined);
           activeTurns.add(threadId);
           await codex.request("turn/start", { threadId, input: [{ type: "text", text }] });
         }
@@ -500,6 +691,37 @@ async function consumePhonePrompts() {
   await saveIdentity(identity);
 }
 
+async function tailscaleStatus() {
+  const candidates = process.platform === "darwin"
+    ? ["tailscale", "/Applications/Tailscale.app/Contents/MacOS/Tailscale"]
+    : [process.platform === "win32" ? "tailscale.exe" : "tailscale"];
+  for (const candidate of candidates) {
+    try {
+      const raw = await runCommand(candidate, ["status", "--json"], 8_000);
+      const status = JSON.parse(raw.stdout) as { Self?: any; Peer?: Record<string, any> };
+      const peers = Object.values(status.Peer ?? {})
+        .filter((peer: any) => peer?.Online)
+        .map((peer: any) => ({
+          name: peer?.HostName ?? peer?.DNSName ?? "Tailnet device",
+          os: peer?.OS ?? null,
+          online: Boolean(peer?.Online),
+        }));
+      return {
+        available: true,
+        self: status.Self?.HostName ?? status.Self?.DNSName ?? null,
+        peers,
+        message: "Tailscale is available. Hammy pairs through its encrypted relay, so it also works when this phone is away from your Tailnet.",
+      };
+    } catch { /* Try the next supported location. */ }
+  }
+  return {
+    available: false,
+    self: null,
+    peers: [],
+    message: "Tailscale was not found on this computer. Remote pairing still works through Hammy's encrypted relay.",
+  };
+}
+
 codex.onNotification = (method, params) => { void handleCodexNotification(method, params).catch(() => undefined); };
 codex.onServerRequest = (method, id, params) => { void handleCodexServerRequest(method, id, params).catch(() => codex.respond(id, { decision: "decline" })); };
 
@@ -512,12 +734,20 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle("hammy:status", status);
+  ipcMain.handle("hammy:status", async () => {
+    const current = await status();
+    if (current.paired) void syncCodexSessions();
+    return current;
+  });
   ipcMain.handle("hammy:login", beginLogin);
   ipcMain.handle("hammy:pair", createPairing);
   ipcMain.handle("hammy:pair-status", (_event, pairingId: string) => pairingStatus(pairingId));
+  ipcMain.handle("hammy:pairing-lobbies", pairingLobbies);
+  ipcMain.handle("hammy:claim-pairing-lobby", (_event, lobbyId: string, code: string) => claimPairingLobby(lobbyId, code));
+  ipcMain.handle("hammy:tailscale", tailscaleStatus);
   ipcMain.handle("hammy:start-session", (_event, prompt: string) => startSession(prompt));
   setInterval(() => { void consumePhonePrompts().catch(() => undefined); }, 2_000);
+  setInterval(() => { void syncCodexSessions(); }, 15_000);
   createWindow();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });

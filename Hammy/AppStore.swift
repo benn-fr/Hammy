@@ -39,20 +39,19 @@ final class AppStore: ObservableObject {
 
     func session(id: UUID) -> ChatSession? { sessions.first(where: { $0.id == id }) }
 
-    func pairWithCompanion(code: String) async throws {
-        connectionMessage = "Securely pairing with your companion…"
-        try await relay.pair(with: code, deviceName: UIDevice.current.name)
-        for _ in 0..<12 {
-            if try await relay.finishPairingIfReady() {
-                connectionMessage = "Paired — syncing encrypted sessions."
-                await syncFromRelay()
-                startSyncLoop()
-                return
-            }
-            try? await Task.sleep(nanoseconds: 850_000_000)
-        }
-        connectionMessage = "Code claimed. Keep Hammy Companion open while it approves this iPhone."
-        throw HammyRelayError.pairingPending
+    func startRemotePairing() async throws -> String {
+        connectionMessage = "Creating a secure pairing request…"
+        let lobby = try await relay.openPairingLobby(deviceName: UIDevice.current.name)
+        connectionMessage = "Enter the matching code in Hammy Companion."
+        return lobby.code
+    }
+
+    func finishRemotePairingIfReady() async throws -> Bool {
+        guard try await relay.finishPairingIfReady() else { return false }
+        connectionMessage = "Paired — syncing encrypted sessions."
+        await syncFromRelay()
+        startSyncLoop()
+        return true
     }
 
     func startSyncLoop() {

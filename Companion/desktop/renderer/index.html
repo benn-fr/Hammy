@@ -12,17 +12,24 @@
       <section class="actions">
         <button id="login" class="primary">Sign in with ChatGPT</button>
         <button id="status-button">Check connection</button>
-        <button id="pair">Pair an iPhone</button>
+        <button id="pair">Find iPhone pairing request</button>
       </section>
       <section id="code" class="code-card" hidden>Open <a target="_blank" rel="noreferrer"></a> and enter <strong></strong>.</section>
-      <section id="pairing" class="pair-card" hidden><span>One-time pairing code</span><strong></strong><small></small></section>
+      <section id="pairing" class="pair-card" hidden>
+        <span>Pair a waiting iPhone</span>
+        <small id="pairing-help">A phone created a secure request. Select it, then enter the code shown on that phone.</small>
+        <select id="pairing-lobby" aria-label="Waiting iPhone pairing request"></select>
+        <input id="pairing-code" maxlength="12" autocomplete="one-time-code" placeholder="12-character code from iPhone" />
+        <button id="approve-pairing" class="primary">Confirm &amp; pair iPhone</button>
+      </section>
+      <section id="tailnet" class="relay">Checking Tailscale…</section>
       <section class="prompt-card">
         <label for="prompt">Start a real Codex session</label>
         <textarea id="prompt" rows="3" placeholder="Ask Codex to work on something…"></textarea>
         <button id="start-session" class="primary">Send to Codex</button>
       </section>
       <section class="relay">Encrypted relay: <strong>https://backend.yzycoin.app</strong></section>
-      <pre id="output" aria-live="polite">Ready. Sign in locally, then pair your iPhone.</pre>
+      <pre id="output" aria-live="polite">Ready. Sign in locally, then create a pairing request from Hammy on your iPhone.</pre>
     </main>
     <script src="./renderer.js"></script>
   </body>

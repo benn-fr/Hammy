@@ -50,6 +50,11 @@ private struct HammyRelayKeyPackageRecord: Codable {
 }
 
 private struct HammyPairClaimResponse: Codable { var pairingId: String }
+struct HammyPairLobbyResponse: Codable {
+    var lobbyId: String
+    var code: String
+    var expiresAt: String
+}
 private struct HammyPairCompleteResponse: Codable {
     var userId: String
     var device: HammyRelayDevice
@@ -111,14 +116,39 @@ final class HammyRelayService: ObservableObject {
         )
         defaults.set(claim.pairingId, forKey: "pendingPairingID")
         defaults.set(normalizedCode, forKey: "pendingPairingCode")
+        defaults.set("legacy", forKey: "pendingPairingKind")
+    }
+
+    /// Starts the phone side of a remote rendezvous. The relay exposes only an
+    /// opaque lobby ID to signed-in companions; the 12-character code shown here
+    /// is still required before it can attach this phone to an account.
+    func openPairingLobby(deviceName: String) async throws -> HammyPairLobbyResponse {
+        let keys = try vault.loadOrCreateDeviceKeys()
+        let publicKeys = try keys.publicBundle
+        let lobby: HammyPairLobbyResponse = try await request(
+            path: "/v1/pairing-lobbies",
+            method: "POST",
+            body: ["device": [
+                "name": deviceName,
+                "platform": "ios",
+                "agreementPublicKey": publicKeys.agreementPublicKey,
+                "signingPublicKey": publicKeys.signingPublicKey,
+            ]]
+        )
+        defaults.set(lobby.lobbyId, forKey: "pendingPairingID")
+        defaults.set(lobby.code, forKey: "pendingPairingCode")
+        defaults.set("lobby", forKey: "pendingPairingKind")
+        return lobby
     }
 
     func finishPairingIfReady() async throws -> Bool {
         guard let pairingId = defaults.string(forKey: "pendingPairingID"),
               let code = defaults.string(forKey: "pendingPairingCode") else { return isPaired }
+        let kind = defaults.string(forKey: "pendingPairingKind") ?? "legacy"
+        let completionPath = kind == "lobby" ? "/v1/pairing-lobbies" : "/v1/pairings"
         do {
             let result: HammyPairCompleteResponse = try await request(
-                path: "/v1/pairings/\(pairingId)/complete?code=\(code)",
+                path: "\(completionPath)/\(pairingId)/complete?code=\(code)",
                 method: "GET"
             )
             try vault.storeRelayCredentials(HammyRelayCredentials(
@@ -129,6 +159,7 @@ final class HammyRelayService: ObservableObject {
             ))
             defaults.removeObject(forKey: "pendingPairingID")
             defaults.removeObject(forKey: "pendingPairingCode")
+            defaults.removeObject(forKey: "pendingPairingKind")
             isPaired = true
             return true
         } catch let error as HammyRelayError where error.errorDescription?.contains("awaiting") == true {

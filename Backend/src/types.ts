@@ -120,4 +120,23 @@ export type PairingRecord = {
   consumedAt: string | null;
 };
 
+// A lobby is created by an unpaired phone before it knows which Hammy account it
+// belongs to. Only its opaque ID and expiry are discoverable; the device keys and
+// pairing code remain private until a signed-in companion proves the code.
+export type PairingLobbyRecord = {
+  id: string;
+  codeHash: string;
+  deviceName: string;
+  devicePlatform: DevicePlatform;
+  agreementPublicKey: string;
+  signingPublicKey: string;
+  userId: string | null;
+  creatorDeviceId: string | null;
+  claimedDeviceId: string | null;
+  expiresAt: string;
+  claimedAt: string | null;
+  consumedAt: string | null;
+  createdAt: string;
+};
+
 export type PublicDevice = Omit<DeviceRecord, "userId">;
