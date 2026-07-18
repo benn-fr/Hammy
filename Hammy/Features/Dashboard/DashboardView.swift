@@ -12,28 +12,30 @@ struct DashboardView: View {
 
                     if let featured = store.featuredSession {
                         featuredCard(featured)
-                    }
-
-                    quickStats
-
-                    if !otherActiveSessions.isEmpty {
-                        VStack(spacing: 12) {
-                            SectionTitle(
-                                title: "Still working",
-                                subtitle: "Every active prompt in one place"
-                            )
-                            ForEach(otherActiveSessions) { session in
-                                NavigationLink {
-                                    ChatDetailView(sessionID: session.id)
-                                } label: {
-                                    SessionCard(session: session, hammyColor: store.hammyColor)
+                        quickStats
+                        if !otherActiveSessions.isEmpty {
+                            VStack(spacing: 12) {
+                                SectionTitle(title: "Still working", subtitle: "Every active prompt in one place")
+                                ForEach(otherActiveSessions) { session in
+                                    NavigationLink { ChatDetailView(sessionID: session.id) } label: {
+                                        SessionCard(session: session, hammyColor: store.hammyColor)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
+                        history
+                    } else {
+                        ContentUnavailableView {
+                            Label("No Codex sessions yet", systemImage: "sparkles")
+                        } description: {
+                            Text(store.connectionMessage)
+                        } actions: {
+                            Button("Refresh") { Task { await store.syncFromRelay() } }
+                                .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.top, 76)
                     }
-
-                    history
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 28)
@@ -41,29 +43,20 @@ struct DashboardView: View {
             .scrollIndicators(.hidden)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    Task { await store.testApprovalNotification() }
-                } label: {
-                    Image(systemName: "bell.badge.fill")
-                }
-                .accessibilityLabel("Send a test approval notification")
-            }
-        }
     }
 
     private var header: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Welcome back")
+                Text(store.relay.isPaired ? "Companion connected" : "Companion required")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Text("Hammy’s on it.")
                     .font(.largeTitle.bold())
-                Text("\(store.activeSessions.count) active sessions")
+                Text(store.connectionMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
             Spacer()
             HammyCharacterView(

@@ -59,6 +59,18 @@ export function hashLoginChallenge(challenge: string): string {
   return hashOpaqueSecret(challenge);
 }
 
+const pairingAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+export function createPairingCode(): { code: string; hash: string } {
+  const bytes = randomBytes(12);
+  const code = [...bytes].map((byte) => pairingAlphabet[byte % pairingAlphabet.length]).join("");
+  return { code, hash: hashOpaqueSecret(code) };
+}
+
+export function hashPairingCode(code: string): string {
+  return hashOpaqueSecret(code);
+}
+
 export function parseRefreshToken(token: string): { authSessionId: string; hash: string } {
   const separator = token.indexOf(".");
   if (separator <= 0 || separator === token.length - 1) {

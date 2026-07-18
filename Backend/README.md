@@ -9,6 +9,7 @@ This directory contains the multi-user, end-to-end encrypted relay for Hammy. It
 - One-use Ed25519 device challenges for every existing-device login.
 - Refresh-token replay detection that revokes the affected login session.
 - Multiple devices per user with `pending`, `trusted`, and `revoked` states.
+- One-time, companion-created pairing codes that register a new iOS device without transferring ChatGPT credentials or a relay password.
 - Ed25519-signed approval by an existing trusted device before a new device can access relay data.
 - PostgreSQL tenant scoping plus forced row-level security on devices, sessions, key packages, and events.
 - Opaque encrypted session metadata and append-only encrypted events.
@@ -67,6 +68,10 @@ npm start           # Run the compiled service
 | `POST` | `/v1/auth/login` | Log in with password plus device proof, or create a pending device |
 | `POST` | `/v1/auth/refresh` | Atomically rotate refresh credentials |
 | `POST` | `/v1/auth/logout` | Revoke the current login session |
+| `POST` | `/v1/pairings` | Create a 10-minute companion pairing code |
+| `POST` | `/v1/pairings/claim` | Claim a pairing code with a new device's public keys |
+| `GET` | `/v1/pairings/{id}` | Let the trusted companion inspect a pending claim |
+| `GET` | `/v1/pairings/{id}/complete` | Exchange an approved pairing code for device-local relay tokens |
 | `GET` | `/v1/me` | Return the current user/device state |
 | `GET` | `/v1/devices` | List account devices |
 | `POST` | `/v1/devices/{id}/approve` | Approve a pending device with an Ed25519 signature |

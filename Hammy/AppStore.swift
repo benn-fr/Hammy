@@ -1,11 +1,12 @@
 import ActivityKit
 import SwiftUI
+import UIKit
 
 @MainActor
 final class AppStore: ObservableObject {
     static let productionRelayURL = "https://backend.yzycoin.app"
 
-    @Published var sessions: [ChatSession] = DemoData.sessions
+    @Published var sessions: [ChatSession] = []
     @Published var updates: [SessionUpdate] = []
     @Published var appearance: AppearanceMode
     @Published var personality: HammyPersonality
@@ -14,13 +15,13 @@ final class AppStore: ObservableObject {
     @Published var commandsAllowed: Bool
     @Published var pluginsAllowed: Bool
     @Published var bridgeURL: String
-    @Published var isPreviewSignedIn = false
-    @Published var usage = UsageSnapshot.demo
+    @Published private(set) var usage = UsageSnapshot.empty
+    @Published private(set) var connectionMessage = "Pair Hammy Companion to begin."
 
     let liveActivity = LiveActivityManager()
-    let bridge = CodexBridgeClient()
+    let relay = HammyRelayService()
 
-    private var demoTask: Task<Void, Never>?
+    private var syncTask: Task<Void, Never>?
     private let defaults = UserDefaults.standard
 
     init() {
@@ -30,80 +31,74 @@ final class AppStore: ObservableObject {
         commandsAllowed = defaults.object(forKey: "commandsAllowed") as? Bool ?? true
         pluginsAllowed = defaults.object(forKey: "pluginsAllowed") as? Bool ?? true
         bridgeURL = defaults.string(forKey: "bridgeURL") ?? Self.productionRelayURL
-        updates = sessions.flatMap { session in
-            session.messages
-                .filter { $0.role == .update || $0.role == .assistant }
-                .map {
-                    SessionUpdate(
-                        sessionID: session.id,
-                        sessionTitle: session.title,
-                        text: $0.text,
-                        state: session.state,
-                        timestamp: $0.timestamp
-                    )
-                }
-        }.sorted { $0.timestamp > $1.timestamp }
     }
 
-    deinit {
-        demoTask?.cancel()
-    }
+    deinit { syncTask?.cancel() }
 
     var preferredColorScheme: ColorScheme? {
-        switch appearance {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
+        switch appearance { case .system: nil; case .light: .light; case .dark: .dark }
+    }
+
+    var activeSessions: [ChatSession] { sessions.filter(\.isActive) }
+    var featuredSession: ChatSession? { activeSessions.first ?? sessions.first }
+
+    func session(id: UUID) -> ChatSession? { sessions.first(where: { $0.id == id }) }
+
+    func pairWithCompanion(code: String) async throws {
+        connectionMessage = "Securely pairing with your companion…"
+        try await relay.pair(with: code, deviceName: UIDevice.current.name)
+        for _ in 0..<12 {
+            if try await relay.finishPairingIfReady() {
+                connectionMessage = "Paired — syncing encrypted sessions."
+                await syncFromRelay()
+                startSyncLoop()
+                return
+            }
+            try? await Task.sleep(nanoseconds: 850_000_000)
         }
+        connectionMessage = "Code claimed. Keep Hammy Companion open while it approves this iPhone."
+        throw HammyRelayError.pairingPending
     }
 
-    var activeSessions: [ChatSession] {
-        sessions.filter(\.isActive)
-    }
-
-    var featuredSession: ChatSession? {
-        sessions.first(where: { $0.id == DemoData.primarySessionID }) ?? activeSessions.first
-    }
-
-    func session(id: UUID) -> ChatSession? {
-        sessions.first(where: { $0.id == id })
-    }
-
-    func beginDemoLoop() {
-        guard demoTask == nil else { return }
-        demoTask = Task { [weak self] in
+    func startSyncLoop() {
+        guard relay.isPaired, syncTask == nil else { return }
+        syncTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 3_200_000_000)
-                guard !Task.isCancelled else { return }
-                await self?.advanceFeaturedSession()
+                await self?.syncFromRelay()
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
             }
         }
     }
 
-    func stopDemoLoop() {
-        demoTask?.cancel()
-        demoTask = nil
+    func syncFromRelay() async {
+        guard relay.isPaired else { return }
+        do {
+            let previousByID = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
+            let fresh = try await relay.sync()
+            sessions = fresh
+            updates = fresh.flatMap { session in
+                session.messages.filter { $0.role == .update || $0.role == .assistant }.map {
+                    SessionUpdate(sessionID: session.id, sessionTitle: session.title, text: $0.text, state: session.state, timestamp: $0.timestamp)
+                }
+            }.sorted { $0.timestamp > $1.timestamp }
+            usage = UsageSnapshot.from(sessions: fresh)
+            connectionMessage = fresh.isEmpty ? "Connected. Start a Codex session in Hammy Companion to see it here." : "Encrypted relay connected."
+            if let featuredSession, previousByID[featuredSession.id]?.state != featuredSession.state {
+                await liveActivity.update(with: featuredSession)
+            }
+        } catch {
+            connectionMessage = error.localizedDescription
+        }
     }
 
-    func previewSignIn() async {
-        try? await Task.sleep(nanoseconds: 650_000_000)
-        isPreviewSignedIn = true
-    }
-
-    func requestNotificationPermission() async {
-        notificationsGranted = await NotificationService.shared.requestAuthorization()
-    }
-
-    func refreshPermissionState() async {
-        notificationsGranted = await NotificationService.shared.currentAuthorizationGranted()
-    }
+    func requestNotificationPermission() async { notificationsGranted = await NotificationService.shared.requestAuthorization() }
+    func refreshPermissionState() async { notificationsGranted = await NotificationService.shared.currentAuthorizationGranted() }
 
     func completeOnboarding() async {
         defaults.set(true, forKey: "hasCompletedOnboarding")
-        beginDemoLoop()
-        if let featuredSession {
-            await liveActivity.start(for: featuredSession)
-        }
+        await syncFromRelay()
+        startSyncLoop()
+        if let featuredSession { await liveActivity.start(for: featuredSession) }
     }
 
     func startLiveActivity(sessionID: UUID) async {
@@ -111,95 +106,20 @@ final class AppStore: ObservableObject {
         await liveActivity.start(for: session)
     }
 
-    func testApprovalNotification() async {
-        guard let session = sessions.first(where: { $0.state == .waitingApproval }) else { return }
-        await NotificationService.shared.scheduleApprovalNeeded(for: session)
+    func sendMainPrompt(_ text: String, to sessionID: UUID) async throws {
+        try await relay.sendMainPrompt(text, to: sessionID)
+        await syncFromRelay()
     }
 
-    func approve(sessionID: UUID) {
-        mutateSession(id: sessionID) { session in
-            session.commandsAllowed = true
-            session.state = .typing
-            session.progress = max(session.progress, 0.84)
-            session.latestUpdate = "Approved — Hammy is back at the keyboard."
-            session.updatedAt = Date()
-            session.messages.append(
-                ChatMessage(role: .update, text: session.latestUpdate, timestamp: Date())
-            )
-        }
+    func sendAside(_ text: String, to sessionID: UUID) async throws {
+        try await relay.sendAside(text, to: sessionID)
+        await syncFromRelay()
     }
 
-    func sendMainPrompt(_ text: String, to sessionID: UUID) {
-        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { return }
-        mutateSession(id: sessionID) { session in
-            session.messages.append(ChatMessage(role: .user, text: cleaned, timestamp: Date()))
-            session.promptPreview = cleaned
-            session.progress = 0.04
-            session.state = .thinking
-            session.latestUpdate = "Hammy is mapping out the new request."
-            session.updatedAt = Date()
-        }
-        usage.mainPromptCount += 1
-        usage.mainPromptTokens += max(18, cleaned.count / 3)
-    }
-
-    func sendAside(_ text: String, to sessionID: UUID) async {
-        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { return }
-        mutateSession(id: sessionID) { session in
-            session.messages.append(
-                ChatMessage(role: .user, text: cleaned, timestamp: Date(), isAside: true)
-            )
-        }
-        try? await Task.sleep(nanoseconds: 420_000_000)
-
-        let response: String
-        if cleaned.lowercased().contains("status") {
-            let progress = Int((session(id: sessionID)?.clampedProgress ?? 0) * 100)
-            response = "Quick aside: the main run is about \(progress)% complete. I left it running exactly as-is."
-        } else if cleaned.lowercased().contains("why") {
-            response = "My quick read: that choice keeps the main thread simpler and lowers the chance of duplicated work."
-        } else {
-            response = "Got it — I checked that on the side without interrupting the main prompt."
-        }
-
-        mutateSession(id: sessionID) { session in
-            session.messages.append(
-                ChatMessage(role: .hammy, text: response, timestamp: Date(), isAside: true)
-            )
-        }
-        usage.hammyAsideCount += 1
-        usage.hammyTokens += max(12, (cleaned.count + response.count) / 3)
-    }
-
-    func setModel(_ model: ModelChoice, sessionID: UUID) {
-        mutateSession(id: sessionID) { $0.model = model }
-    }
-
-    func setIntelligence(_ intelligence: IntelligenceLevel, sessionID: UUID) {
-        mutateSession(id: sessionID) { $0.intelligence = intelligence }
-    }
-
-    func toggleCommands(sessionID: UUID) {
-        mutateSession(id: sessionID) { session in
-            session.commandsAllowed.toggle()
-            session.latestUpdate = session.commandsAllowed
-                ? "Command use is allowed for this session."
-                : "Command use is paused for this session."
-            session.updatedAt = Date()
-        }
-    }
-
-    func togglePlugins(sessionID: UUID) {
-        mutateSession(id: sessionID) { session in
-            session.pluginsAllowed.toggle()
-            session.latestUpdate = session.pluginsAllowed
-                ? "Plugin use is allowed for this session."
-                : "Plugin use is paused for this session."
-            session.updatedAt = Date()
-        }
-    }
+    func setModel(_ model: ModelChoice, sessionID: UUID) { mutateSession(id: sessionID) { $0.model = model } }
+    func setIntelligence(_ intelligence: IntelligenceLevel, sessionID: UUID) { mutateSession(id: sessionID) { $0.intelligence = intelligence } }
+    func toggleCommands(sessionID: UUID) { mutateSession(id: sessionID) { $0.commandsAllowed.toggle() } }
+    func togglePlugins(sessionID: UUID) { mutateSession(id: sessionID) { $0.pluginsAllowed.toggle() } }
 
     func persistPreferences() {
         defaults.set(appearance.rawValue, forKey: "appearance")
@@ -210,63 +130,10 @@ final class AppStore: ObservableObject {
         defaults.set(bridgeURL, forKey: "bridgeURL")
     }
 
-    func resetOnboarding() {
-        defaults.set(false, forKey: "hasCompletedOnboarding")
-    }
-
-    private func advanceFeaturedSession() async {
-        guard let index = sessions.firstIndex(where: { $0.id == DemoData.primarySessionID }) else { return }
-        guard sessions[index].state != .complete else { return }
-
-        sessions[index].progress = min(sessions[index].progress + 0.025, 1)
-        let progress = sessions[index].progress
-        switch progress {
-        case ..<0.18:
-            sessions[index].state = .thinking
-            sessions[index].agentCount = 0
-            sessions[index].latestUpdate = "Thinking through the cleanest implementation path."
-        case ..<0.45:
-            sessions[index].state = .typing
-            sessions[index].agentCount = 0
-            sessions[index].latestUpdate = "Writing the next piece and checking it as I go."
-        case ..<0.58:
-            sessions[index].state = .compacting
-            sessions[index].agentCount = 0
-            sessions[index].latestUpdate = "Rolling older context into a compact working note."
-        case ..<0.78:
-            sessions[index].state = .delegating
-            sessions[index].agentCount = 3
-            sessions[index].latestUpdate = "Three helper agents are checking layout, behavior, and polish."
-        case ..<1:
-            sessions[index].state = .typing
-            sessions[index].agentCount = 0
-            sessions[index].latestUpdate = "Pulling the results together for the final pass."
-        default:
-            sessions[index].state = .complete
-            sessions[index].agentCount = 0
-            sessions[index].latestUpdate = "Finished — everything is ready to review."
-            sessions[index].messages.append(
-                ChatMessage(role: .assistant, text: sessions[index].latestUpdate, timestamp: Date())
-            )
-        }
-        sessions[index].updatedAt = Date()
-        await liveActivity.update(with: sessions[index])
-    }
+    func resetOnboarding() { defaults.set(false, forKey: "hasCompletedOnboarding") }
 
     private func mutateSession(id: UUID, mutation: (inout ChatSession) -> Void) {
         guard let index = sessions.firstIndex(where: { $0.id == id }) else { return }
         mutation(&sessions[index])
-        let session = sessions[index]
-        updates.insert(
-            SessionUpdate(
-                sessionID: session.id,
-                sessionTitle: session.title,
-                text: session.latestUpdate,
-                state: session.state,
-                timestamp: Date()
-            ),
-            at: 0
-        )
-        Task { await liveActivity.update(with: session) }
     }
 }

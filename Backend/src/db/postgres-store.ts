@@ -4,6 +4,7 @@ import type {
   DeviceRecord,
   EncryptedEventRecord,
   KeyPackageRecord,
+  PairingRecord,
   RelaySessionRecord,
   UserRecord,
 } from "../types.js";
@@ -100,6 +101,19 @@ function mapEvent(row: Row): EncryptedEventRecord {
   };
 }
 
+function mapPairing(row: Row): PairingRecord {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    creatorDeviceId: String(row.creator_device_id),
+    codeHash: String(row.code_hash),
+    claimedDeviceId: row.claimed_device_id ? String(row.claimed_device_id) : null,
+    expiresAt: iso(row.expires_at),
+    claimedAt: row.claimed_at ? iso(row.claimed_at) : null,
+    consumedAt: row.consumed_at ? iso(row.consumed_at) : null,
+  };
+}
+
 export class PostgresStore implements Store {
   private readonly pool: pg.Pool;
 
@@ -126,6 +140,22 @@ export class PostgresStore implements Store {
     await client.query("BEGIN");
     try {
       await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
+      const result = await action(client);
+      await client.query("COMMIT");
+      return result;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private async withPairingCode<T>(codeHash: string, action: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    await client.query("BEGIN");
+    try {
+      await client.query("SELECT set_config('app.pairing_code_hash', $1, true)", [codeHash]);
       const result = await action(client);
       await client.query("COMMIT");
       return result;
@@ -346,6 +376,87 @@ export class PostgresStore implements Store {
     } finally {
       client.release();
     }
+  }
+
+  async createPairing(input: Omit<PairingRecord, "claimedDeviceId" | "claimedAt" | "consumedAt">): Promise<PairingRecord> {
+    return this.withTenant(input.userId, async (client) => {
+      const result = await client.query<Row>(
+        `INSERT INTO pairings (id, user_id, creator_device_id, code_hash, expires_at)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [input.id, input.userId, input.creatorDeviceId, input.codeHash, input.expiresAt],
+      );
+      const row = result.rows[0];
+      if (!row) throw new Error("Failed to create pairing");
+      return mapPairing(row);
+    });
+  }
+
+  async claimPairing(codeHash: string, device: DeviceInput): Promise<PairingRecord | null> {
+    return this.withPairingCode(codeHash, async (client) => {
+      const selected = await client.query<Row>(
+        `SELECT * FROM pairings
+         WHERE code_hash = $1 AND claimed_device_id IS NULL AND consumed_at IS NULL AND expires_at > now()
+         FOR UPDATE`,
+        [codeHash],
+      );
+      const pairingRow = selected.rows[0];
+      if (!pairingRow) return null;
+      const pairing = mapPairing(pairingRow);
+      await client.query("SELECT set_config('app.current_user_id', $1, true)", [pairing.userId]);
+      const duplicate = await client.query<Row>(
+        `SELECT id FROM devices WHERE user_id = $1 AND (signing_public_key = $2 OR agreement_public_key = $3) LIMIT 1`,
+        [pairing.userId, device.signingPublicKey, device.agreementPublicKey],
+      );
+      if (duplicate.rows[0]) throw new ConflictError("Device keys are already registered");
+      const created = await client.query<Row>(
+        `INSERT INTO devices (user_id, name, platform, agreement_public_key, signing_public_key, trust_state)
+         VALUES ($1, $2, $3, $4, $5, 'pending') RETURNING *`,
+        [pairing.userId, device.name, device.platform, device.agreementPublicKey, device.signingPublicKey],
+      );
+      const pending = created.rows[0];
+      if (!pending) throw new Error("Failed to create paired device");
+      const updated = await client.query<Row>(
+        "UPDATE pairings SET claimed_device_id = $2, claimed_at = now() WHERE id = $1 RETURNING *",
+        [pairing.id, pending.id],
+      );
+      return updated.rows[0] ? mapPairing(updated.rows[0]) : null;
+    });
+  }
+
+  async getPairing(userId: string, pairingId: string): Promise<PairingRecord | null> {
+    return this.withTenant(userId, async (client) => {
+      const result = await client.query<Row>("SELECT * FROM pairings WHERE id = $1 AND user_id = $2", [pairingId, userId]);
+      return result.rows[0] ? mapPairing(result.rows[0]) : null;
+    });
+  }
+
+  async getPairingByCode(pairingId: string, codeHash: string): Promise<PairingRecord | null> {
+    return this.withPairingCode(codeHash, async (client) => {
+      const result = await client.query<Row>(
+        "SELECT * FROM pairings WHERE id = $1 AND code_hash = $2 AND consumed_at IS NULL AND expires_at > now()",
+        [pairingId, codeHash],
+      );
+      return result.rows[0] ? mapPairing(result.rows[0]) : null;
+    });
+  }
+
+  async consumePairing(pairingId: string, codeHash: string): Promise<PairingRecord | null> {
+    return this.withPairingCode(codeHash, async (client) => {
+      const selected = await client.query<Row>(
+        `SELECT * FROM pairings WHERE id = $1 AND code_hash = $2 AND consumed_at IS NULL AND expires_at > now()
+         FOR UPDATE`,
+        [pairingId, codeHash],
+      );
+      const row = selected.rows[0];
+      if (!row) return null;
+      const pairing = mapPairing(row);
+      if (!pairing.claimedDeviceId) return null;
+      await client.query("SELECT set_config('app.current_user_id', $1, true)", [pairing.userId]);
+      const device = await client.query<Row>("SELECT trust_state FROM devices WHERE id = $1 AND user_id = $2", [pairing.claimedDeviceId, pairing.userId]);
+      if (device.rows[0]?.trust_state !== "trusted") return null;
+      const updated = await client.query<Row>("UPDATE pairings SET consumed_at = now() WHERE id = $1 RETURNING *", [pairing.id]);
+      return updated.rows[0] ? mapPairing(updated.rows[0]) : null;
+    });
   }
 
   async createRelaySession(input: Omit<RelaySessionRecord, "createdAt" | "updatedAt" | "archivedAt">): Promise<RelaySessionRecord> {

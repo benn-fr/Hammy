@@ -18,7 +18,8 @@ struct RootView: View {
         .task {
             await store.refreshPermissionState()
             if hasCompletedOnboarding {
-                store.beginDemoLoop()
+                store.startSyncLoop()
+                await store.syncFromRelay()
             }
         }
     }

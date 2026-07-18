@@ -20,13 +20,16 @@ struct TypewriterText: View {
                 }
 
                 displayedText = ""
-                let haptic = UIImpactFeedbackGenerator(style: .soft)
+                let haptic = UIImpactFeedbackGenerator(style: .rigid)
+                let punctuation = UINotificationFeedbackGenerator()
                 haptic.prepare()
                 for (index, character) in text.enumerated() {
                     guard !Task.isCancelled else { return }
                     displayedText.append(character)
-                    if index.isMultiple(of: 3), !character.isWhitespace {
-                        haptic.impactOccurred(intensity: 0.24)
+                    if ".!?".contains(character) {
+                        punctuation.notificationOccurred(.success)
+                    } else if index.isMultiple(of: 2), !character.isWhitespace {
+                        haptic.impactOccurred(intensity: 0.38)
                         haptic.prepare()
                     }
                     try? await Task.sleep(nanoseconds: characterDelay)
@@ -35,4 +38,3 @@ struct TypewriterText: View {
             }
     }
 }
-

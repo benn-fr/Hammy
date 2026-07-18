@@ -22,25 +22,9 @@ final class HammyTests: XCTestCase {
         XCTAssertEqual(tooLow.clampedProgress, 0)
     }
 
-    func testDemoIncludesEveryImportantLiveState() {
-        let states = Set(DemoData.sessions.map(\.state))
-        XCTAssertTrue(states.contains(.delegating))
-        XCTAssertTrue(states.contains(.compacting))
-        XCTAssertTrue(states.contains(.waitingApproval))
-        XCTAssertTrue(states.contains(.complete))
-    }
-
-    @MainActor
-    func testAsideDoesNotChangeMainPromptProgress() async {
-        let store = AppStore()
-        let sessionID = DemoData.primarySessionID
-        let before = store.session(id: sessionID)?.progress
-
-        await store.sendAside("What’s the status?", to: sessionID)
-
-        XCTAssertEqual(store.session(id: sessionID)?.progress, before)
-        XCTAssertEqual(store.session(id: sessionID)?.messages.last?.role, .hammy)
-        XCTAssertTrue(store.session(id: sessionID)?.messages.last?.isAside == true)
+    func testUsageStartsEmptyUntilRelayProvidesRealSessions() {
+        XCTAssertEqual(UsageSnapshot.empty.mainPromptCount, 0)
+        XCTAssertEqual(UsageSnapshot.empty.mainPromptTokens, 0)
     }
 
     func testE2EEEventRoundTripAndTamperDetection() throws {

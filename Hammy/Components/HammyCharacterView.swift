@@ -11,6 +11,9 @@ struct HammyCharacterView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var floating = false
     @State private var swaying = false
+    @State private var waving = false
+    @State private var typingPulse = false
+    @State private var sparkle = false
 
     var body: some View {
         ZStack {
@@ -33,11 +36,27 @@ struct HammyCharacterView: View {
                 .hueRotation(colorChoice.hueRotation)
                 .frame(width: size, height: size)
                 .rotationEffect(characterRotation)
-                .scaleEffect(state == .typing && floating ? 1.018 : 1)
-                .offset(y: floating && !reduceMotion ? -4 : 3)
+                .scaleEffect(state == .typing && typingPulse ? 1.025 : (floating ? 1.012 : 1))
+                .offset(y: floating && !reduceMotion ? -7 : 3)
                 .shadow(color: colorChoice.color.opacity(0.24), radius: 18, y: 8)
 
+            if isWaving {
+                HammyWaveHand(color: colorChoice.color, waving: waving)
+                    .frame(width: size * 0.32, height: size * 0.34)
+                    .offset(x: -size * 0.47, y: -size * 0.08)
+                    .accessibilityHidden(true)
+            }
+
             stateAccessory
+
+            if state == .complete {
+                Image(systemName: "sparkles")
+                    .font(.system(size: size * 0.20, weight: .bold))
+                    .foregroundStyle(Color.hammyMint)
+                    .scaleEffect(sparkle ? 1.12 : 0.72)
+                    .opacity(sparkle ? 1 : 0.32)
+                    .offset(x: -size * 0.39, y: -size * 0.34)
+            }
 
             if showsThought {
                 thoughtBubble
@@ -51,9 +70,12 @@ struct HammyCharacterView: View {
             withAnimation(.easeInOut(duration: 1.45).repeatForever(autoreverses: true)) {
                 floating = true
             }
-            withAnimation(.easeInOut(duration: 0.46).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 0.72).repeatForever(autoreverses: true)) {
                 swaying = true
             }
+            withAnimation(.easeInOut(duration: 0.36).repeatForever(autoreverses: true)) { typingPulse = true }
+            withAnimation(.easeInOut(duration: 0.38).repeatForever(autoreverses: true)) { sparkle = true }
+            withAnimation(.easeInOut(duration: 0.42).repeatForever(autoreverses: true)) { waving = true }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Hammy is \(state.title.lowercased())")
@@ -62,7 +84,7 @@ struct HammyCharacterView: View {
     private var characterRotation: Angle {
         if state == .waitingApproval { return .degrees(7) }
         guard isWaving && !reduceMotion else { return .zero }
-        return .degrees(swaying ? 3.2 : -3.2)
+        return .degrees(swaying ? 1.4 : -1.4)
     }
 
     @ViewBuilder
@@ -77,6 +99,7 @@ struct HammyCharacterView: View {
                 .background(Color.hammyPurple.gradient, in: Circle())
                 .shadow(color: Color.hammyPurple.opacity(0.3), radius: 8, y: 4)
                 .offset(x: size * 0.37, y: -size * 0.34)
+                .symbolEffect(.pulse, options: .repeating)
         case .typing:
             Label("tap tap", systemImage: "keyboard.fill")
                 .font(.system(size: max(8, size * 0.07), weight: .bold, design: .rounded))
@@ -85,6 +108,7 @@ struct HammyCharacterView: View {
                 .padding(.vertical, size * 0.045)
                 .background(Color.hammyCyan.gradient, in: Capsule())
                 .offset(x: size * 0.27, y: size * 0.37)
+                .scaleEffect(typingPulse ? 1.04 : 0.92)
         case .compacting:
             Image(systemName: "scroll.fill")
                 .font(.system(size: badgeSize * 0.72))
@@ -158,3 +182,32 @@ struct HammyCharacterView: View {
     }
 }
 
+private struct HammyWaveHand: View {
+    var color: Color
+    var waving: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Capsule()
+                .fill(LinearGradient(colors: [.white, color.opacity(0.35)], startPoint: .top, endPoint: .bottom))
+                .overlay(Capsule().stroke(Color.hammyInk.opacity(0.35), lineWidth: 2))
+                .frame(width: 20, height: 58)
+                .rotationEffect(.degrees(waving ? -24 : 13), anchor: .bottom)
+                .offset(y: 5)
+            HStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule()
+                        .fill(.white)
+                        .overlay(Capsule().stroke(color.opacity(0.75), lineWidth: 1.2))
+                        .frame(width: 7, height: 23)
+                        .rotationEffect(.degrees(Double(index - 1) * 14))
+                }
+            }
+            .padding(5)
+            .background(.white, in: Circle())
+            .overlay(Circle().stroke(Color.hammyInk.opacity(0.38), lineWidth: 2))
+            .offset(y: -42)
+        }
+        .rotationEffect(.degrees(waving ? -8 : 5), anchor: .bottom)
+    }
+}

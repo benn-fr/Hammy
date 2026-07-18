@@ -121,6 +121,19 @@ export const appendEventSchema = z.object({
   envelope: signedCiphertextSchema,
 }).strict();
 
+export const createPairingSchema = z.object({}).strict();
+
+const pairingCodeSchema = z.string().regex(/^[A-HJ-NP-Z2-9]{12}$/);
+
+export const claimPairingSchema = z.object({
+  code: pairingCodeSchema,
+  device: deviceInputSchema,
+}).strict();
+
+export const pairingCodeQuerySchema = z.object({
+  code: pairingCodeSchema,
+}).strict();
+
 export function assertClientTimestamp(value: string): void {
   const timestamp = new Date(value).getTime();
   const now = Date.now();

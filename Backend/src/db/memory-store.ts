@@ -5,6 +5,7 @@ import type {
   EncryptedEventRecord,
   KeyPackageRecord,
   LoginChallengeRecord,
+  PairingRecord,
   RelaySessionRecord,
   UserRecord,
 } from "../types.js";
@@ -17,6 +18,7 @@ export class MemoryStore implements Store {
   private readonly devices = new Map<string, DeviceRecord>();
   private readonly authSessions = new Map<string, AuthSessionRecord>();
   private readonly loginChallenges = new Map<string, LoginChallengeRecord>();
+  private readonly pairings = new Map<string, PairingRecord>();
   private readonly relaySessions = new Map<string, RelaySessionRecord>();
   private readonly sessionKeyEpochs = new Map<string, Map<string, number>>();
   private readonly keyPackages = new Map<string, KeyPackageRecord>();
@@ -221,6 +223,44 @@ export class MemoryStore implements Store {
     ) return false;
     this.loginChallenges.set(challenge.id, { ...challenge, usedAt: new Date().toISOString() });
     return true;
+  }
+
+  async createPairing(input: Omit<PairingRecord, "claimedDeviceId" | "claimedAt" | "consumedAt">): Promise<PairingRecord> {
+    const record: PairingRecord = { ...input, claimedDeviceId: null, claimedAt: null, consumedAt: null };
+    this.pairings.set(record.id, record);
+    return record;
+  }
+
+  async claimPairing(codeHash: string, device: DeviceInput): Promise<PairingRecord | null> {
+    const pairing = [...this.pairings.values()].find((candidate) =>
+      candidate.codeHash === codeHash && !candidate.claimedDeviceId && !candidate.consumedAt && new Date(candidate.expiresAt) > new Date(),
+    );
+    if (!pairing) return null;
+    const pending = await this.createPendingDevice(pairing.userId, device);
+    const updated: PairingRecord = { ...pairing, claimedDeviceId: pending.id, claimedAt: new Date().toISOString() };
+    this.pairings.set(updated.id, updated);
+    return updated;
+  }
+
+  async getPairing(userId: string, pairingId: string): Promise<PairingRecord | null> {
+    const pairing = this.pairings.get(pairingId);
+    return pairing?.userId === userId ? pairing : null;
+  }
+
+  async getPairingByCode(pairingId: string, codeHash: string): Promise<PairingRecord | null> {
+    const pairing = this.pairings.get(pairingId);
+    if (!pairing || pairing.codeHash !== codeHash || pairing.consumedAt || new Date(pairing.expiresAt) <= new Date()) return null;
+    return pairing;
+  }
+
+  async consumePairing(pairingId: string, codeHash: string): Promise<PairingRecord | null> {
+    const pairing = await this.getPairingByCode(pairingId, codeHash);
+    if (!pairing || !pairing.claimedDeviceId) return null;
+    const device = await this.getDevice(pairing.userId, pairing.claimedDeviceId);
+    if (!device || device.trustState !== "trusted") return null;
+    const updated: PairingRecord = { ...pairing, consumedAt: new Date().toISOString() };
+    this.pairings.set(updated.id, updated);
+    return updated;
   }
 
   async createRelaySession(input: Omit<RelaySessionRecord, "activeKeyId" | "keyRotationRequired" | "createdAt" | "updatedAt" | "archivedAt">): Promise<RelaySessionRecord> {

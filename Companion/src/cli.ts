@@ -13,9 +13,6 @@ function usage(exitCode = 0): never {
 Usage:
   hammy-companion login       Start Codex's device-code sign-in locally
   hammy-companion status      Show local Codex sign-in status
-  hammy-companion pair        Create a short-lived local Codex pairing code
-  hammy-companion start       Start the local Codex remote-control daemon
-  hammy-companion stop        Stop the local Codex remote-control daemon
   hammy-companion serve       Start a local-only Codex app-server (JSONL over stdio)
 
 Environment:
@@ -63,18 +60,6 @@ case "login":
 case "status":
   printContext();
   runCodex(["login", "status"]);
-  break;
-case "pair":
-  printContext();
-  console.log("\nCreating a short-lived pairing code from the locally authenticated Codex daemon.\n");
-  runCodex(["remote-control", "pair", "--json"]);
-  break;
-case "start":
-  printContext();
-  runCodex(["remote-control", "start", "--json"]);
-  break;
-case "stop":
-  runCodex(["remote-control", "stop", "--json"]);
   break;
 case "serve":
   printContext();

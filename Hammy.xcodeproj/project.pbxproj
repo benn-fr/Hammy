@@ -19,6 +19,7 @@
 		544C170585162DD525EB56E9 /* HammyActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */; };
 		5466BDF167396E061C081678 /* HammyAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CAD66F48FAAD63791A606665 /* HammyAssets.xcassets */; };
 		5EB4C28F14BA165AF5983412 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36037E3D2F3C42167737FFE1 /* NotificationService.swift */; };
+		70F931E4A0BA01E3179B99D7 /* HammyRelayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9649F144054951F2F6B01DD3 /* HammyRelayService.swift */; };
 		72F78D6F10396D5598D15339 /* UpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6E188A10CE5E8433D819D0 /* UpdatesView.swift */; };
 		7AD7D3E2D85E11204777556A /* SessionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CD78B3301BF5DD08E4F25C /* SessionViews.swift */; };
 		82E5F5CFAC5FEAF5507D0045 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FE59EBCB85601E0C696BEA8 /* OnboardingView.swift */; };
@@ -102,6 +103,7 @@
 		78D342D45260DC7783ED56E3 /* Hammy.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hammy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D6A0B86AC07ABB7284A8ED0 /* HammyCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyCharacterView.swift; sourceTree = "<group>"; };
 		8D88F58403D7E39B4DEFAB8C /* HammyActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyActivityAttributes.swift; sourceTree = "<group>"; };
+		9649F144054951F2F6B01DD3 /* HammyRelayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyRelayService.swift; sourceTree = "<group>"; };
 		A9ED6BEFFFBCD80490CAE3C3 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		B410536E366D20CABA0384A2 /* HammyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HammyUITests.swift; sourceTree = "<group>"; };
 		B7253DA71D4F5B27DE86FC36 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -256,6 +258,7 @@
 			children = (
 				2BF87B42A32B9D90CCB790EF /* CodexBridgeClient.swift */,
 				FC951C8AA5B2CC481F737956 /* HammyE2EE.swift */,
+				9649F144054951F2F6B01DD3 /* HammyRelayService.swift */,
 				A9ED6BEFFFBCD80490CAE3C3 /* LiveActivityManager.swift */,
 				36037E3D2F3C42167737FFE1 /* NotificationService.swift */,
 			);
@@ -445,6 +448,7 @@
 				DFB25505C24D6A82EEC332C9 /* HammyDesignSystem.swift in Sources */,
 				844B6B296CA67D74F7C4C47E /* HammyE2EE.swift in Sources */,
 				1744C1FA32A66A40A11A2769 /* HammyModels.swift in Sources */,
+				70F931E4A0BA01E3179B99D7 /* HammyRelayService.swift in Sources */,
 				A3E049857806072FAA2A7CDF /* HammySharedStyle.swift in Sources */,
 				306D2ED979AA9E8EAF4C013D /* LiveActivityManager.swift in Sources */,
 				3AFCCAE6414EDBCBA8B51D67 /* MainTabView.swift in Sources */,

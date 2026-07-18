@@ -235,6 +235,49 @@ describe("multi-user encrypted relay API", () => {
     expect(nowAllowed.statusCode).toBe(200);
   });
 
+  it("pairs an iPhone through a one-time companion code without transferring ChatGPT credentials", async () => {
+    const { app } = await makeApp();
+    const companion = await register(app, "companion-pair@example.com");
+    const created = await app.inject({
+      method: "POST", url: "/v1/pairings", headers: authorization(companion.account.tokens.accessToken), payload: {},
+    });
+    expect(created.statusCode).toBe(201);
+    const pairing = created.json<{ pairingId: string; code: string }>();
+    expect(pairing.code).toMatch(/^[A-HJ-NP-Z2-9]{12}$/);
+
+    const iphoneKeys = generateDeviceKeys();
+    const claim = await app.inject({
+      method: "POST", url: "/v1/pairings/claim", payload: {
+        code: pairing.code,
+        device: {
+          name: "Ben’s iPhone", platform: "ios",
+          agreementPublicKey: iphoneKeys.agreementPublicKey, signingPublicKey: iphoneKeys.signingPublicKey,
+        },
+      },
+    });
+    expect(claim.statusCode).toBe(200);
+
+    const pending = await app.inject({
+      method: "GET", url: `/v1/pairings/${pairing.pairingId}`, headers: authorization(companion.account.tokens.accessToken),
+    });
+    const device = pending.json<{ device: RegisteredAccount["device"] }>().device;
+    expect(device.trustState).toBe("pending");
+    const signature = sign(null, deviceApprovalPayload({
+      userId: companion.account.user.id, approverDeviceId: companion.account.device.id,
+      pendingDeviceId: device.id, pendingAgreementPublicKey: device.agreementPublicKey, pendingSigningPublicKey: device.signingPublicKey,
+    }), createPrivateKey(companion.keys.signingPrivateKeyPEM)).toString("base64url");
+    const approved = await app.inject({
+      method: "POST", url: `/v1/devices/${device.id}/approve`, headers: authorization(companion.account.tokens.accessToken), payload: { signature },
+    });
+    expect(approved.statusCode).toBe(200);
+
+    const complete = await app.inject({ method: "GET", url: `/v1/pairings/${pairing.pairingId}/complete?code=${pairing.code}` });
+    expect(complete.statusCode).toBe(200);
+    const iPhoneToken = complete.json<{ tokens: { accessToken: string } }>().tokens.accessToken;
+    const usable = await app.inject({ method: "GET", url: "/v1/sessions", headers: authorization(iPhoneToken) });
+    expect(usable.statusCode).toBe(200);
+  });
+
   it("delivers a signed session-key package only to its intended device", async () => {
     const { app } = await makeApp();
     const primary = await register(app, "keys@example.com");

@@ -1,6 +1,6 @@
 # Hammy Companion
 
-Hammy Companion is a local desktop app and CLI for macOS, Windows, and Linux. It invokes the user's own installed Codex CLI; it never reads, exports, relays, or stores a ChatGPT/Codex credential.
+Hammy Companion is a local desktop app and CLI for macOS, Windows, and Linux. It starts the documented local Codex app-server and uses its device-code ChatGPT sign-in. ChatGPT credentials remain inside local Codex; the companion stores a separate encrypted relay-device identity using the operating system's credential protection.
 
 ## Desktop builds
 
@@ -30,20 +30,16 @@ On Windows PowerShell, run the same commands in PowerShell. If script execution 
 ## Local workflow
 
 ```sh
-# Opens Codex's device-code browser sign-in. Credentials stay on this machine.
+# Opens Codex's local device-code browser sign-in. Credentials stay inside Codex on this machine.
 hammy-companion login
 
 # Confirms the local Codex identity.
 hammy-companion status
 
-# Starts the local remote-control daemon, then creates a short-lived pairing code.
-hammy-companion start
-hammy-companion pair
-
 # Starts a JSONL Codex app-server for a local Hammy adapter.
 hammy-companion serve
 ```
 
-`pair` uses Codex's experimental `remote-control pair` command. Its code is short-lived and is intended for a local, managed client. It is not a Codex credential and must not be used to make the companion reachable from the public internet.
+In the desktop app, choose **Pair an iPhone** after signing in. It creates a 12-character, one-time code valid for ten minutes. Hammy uses that code to create a new iOS relay device; the companion signs its approval locally, and only then does the iPhone receive its own relay token and recipient-bound session keys. The pairing code is not a ChatGPT credential.
 
-The relay endpoint defaults to `https://backend.yzycoin.app`; override the display/configuration value with `HAMMY_RELAY_URL` if needed. The next adapter layer consumes local app-server events and sends E2EE envelopes to that relay. Keep Codex app-server on local stdio or an authenticated loopback socket.
+The relay endpoint defaults to `https://backend.yzycoin.app`; override it with `HAMMY_RELAY_URL` if needed. The companion translates local app-server thread events into signed, end-to-end encrypted relay envelopes. Keep Codex app-server on local stdio or an authenticated loopback socket.

@@ -6,6 +6,7 @@ import type {
   KeyPackageEnvelope,
   KeyPackageRecord,
   NotificationHint,
+  PairingRecord,
   RelaySessionRecord,
   SignedCiphertext,
   UserRecord,
@@ -66,6 +67,18 @@ export interface Store {
     deviceId: string;
     challengeHash: string;
   }): Promise<boolean>;
+
+  createPairing(input: {
+    id: string;
+    userId: string;
+    creatorDeviceId: string;
+    codeHash: string;
+    expiresAt: string;
+  }): Promise<PairingRecord>;
+  claimPairing(codeHash: string, device: DeviceInput): Promise<PairingRecord | null>;
+  getPairing(userId: string, pairingId: string): Promise<PairingRecord | null>;
+  getPairingByCode(pairingId: string, codeHash: string): Promise<PairingRecord | null>;
+  consumePairing(pairingId: string, codeHash: string): Promise<PairingRecord | null>;
 
   createRelaySession(input: {
     id: string;

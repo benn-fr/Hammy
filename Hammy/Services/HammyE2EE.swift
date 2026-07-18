@@ -561,6 +561,15 @@ final class HammyKeyVault {
         }
     }
 
+    func storeRelayCredentials(_ credentials: HammyRelayCredentials) throws {
+        try write(try JSONEncoder().encode(credentials), account: "relay-credentials")
+    }
+
+    func relayCredentials() throws -> HammyRelayCredentials? {
+        guard let data = try read(account: "relay-credentials") else { return nil }
+        return try JSONDecoder().decode(HammyRelayCredentials.self, from: data)
+    }
+
     private func read(account: String) throws -> Data? {
         var query = baseQuery(account: account)
         query[kSecReturnData as String] = true

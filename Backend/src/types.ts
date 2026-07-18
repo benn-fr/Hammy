@@ -109,4 +109,15 @@ export type AccessClaims = {
   trusted: boolean;
 };
 
+export type PairingRecord = {
+  id: string;
+  userId: string;
+  creatorDeviceId: string;
+  codeHash: string;
+  claimedDeviceId: string | null;
+  expiresAt: string;
+  claimedAt: string | null;
+  consumedAt: string | null;
+};
+
 export type PublicDevice = Omit<DeviceRecord, "userId">;

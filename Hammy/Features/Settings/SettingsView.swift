@@ -14,7 +14,7 @@ struct SettingsView: View {
                     personalityCard
                     usageCard
                     permissionsCard
-                    BridgeConnectionCard(bridge: store.bridge)
+                    CompanionConnectionCard()
                     aboutCard
                 }
                 .padding(.horizontal, 18)
@@ -46,7 +46,7 @@ struct SettingsView: View {
                 Text(store.personality.greeting)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Label("Preview account", systemImage: "checkmark.seal.fill")
+                Label(store.relay.isPaired ? "Paired companion" : "Companion not paired", systemImage: store.relay.isPaired ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                     .font(.caption.bold())
                     .foregroundStyle(Color.hammyCyan)
             }
@@ -136,29 +136,11 @@ struct SettingsView: View {
 
     private var usageCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionTitle(title: "Usage", subtitle: "Main prompts and quick Hammy asides stay separate")
-
-            usageRow(
-                title: "Main prompts",
-                value: store.usage.mainPromptTokens,
-                count: store.usage.mainPromptCount,
-                color: .hammyBlue,
-                ratio: 1
-            )
-            usageRow(
-                title: "Hammy asides",
-                value: store.usage.hammyTokens,
-                count: store.usage.hammyAsideCount,
-                color: .hammyPurple,
-                ratio: Double(store.usage.hammyTokens) / Double(max(store.usage.mainPromptTokens, 1))
-            )
-
-            HStack {
-                Image(systemName: "info.circle.fill")
-                Text("Preview estimates. A paired bridge can replace these with account-reported usage.")
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            SectionTitle(title: "Usage", subtitle: "Only Codex-reported usage belongs here")
+            ContentUnavailableView(
+                "Usage not reported yet",
+                systemImage: "chart.bar.xaxis",
+                description: Text("Hammy does not invent token totals. The companion will display Codex account usage once it receives it from app-server."))
         }
         .glassCard()
     }
@@ -244,59 +226,29 @@ struct SettingsView: View {
     }
 }
 
-private struct BridgeConnectionCard: View {
+private struct CompanionConnectionCard: View {
     @EnvironmentObject private var store: AppStore
-    @ObservedObject var bridge: CodexBridgeClient
-    @State private var token = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionTitle(title: "Encrypted relay", subtitle: "Connect to the multi-user Hammy backend")
-
-            TextField("https://backend.yzycoin.app", text: $store.bridgeURL)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.URL)
-                .autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
-
-            SecureField("Access token (kept in memory)", text: $token)
-                .textInputAutocapitalization(.never)
-                .textFieldStyle(.roundedBorder)
+            SectionTitle(title: "Hammy Companion", subtitle: "Your computer owns the Codex sign-in and encrypted bridge")
 
             HStack {
                 Circle()
-                    .fill(connectionColor)
+                    .fill(store.relay.isPaired ? Color.hammyMint : .orange)
                     .frame(width: 9, height: 9)
-                Text(bridge.state.label)
+                Text(store.connectionMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if bridge.state == .connected {
-                    Button("Disconnect") { bridge.disconnect() }
-                        .buttonStyle(.bordered)
-                } else {
-                    Button("Connect") {
-                        bridge.connect(to: store.bridgeURL, bearerToken: token)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.hammyCyan)
-                    .disabled(store.bridgeURL.isEmpty || token.isEmpty)
-                }
+                Button("Sync now") { Task { await store.syncFromRelay() } }
+                    .buttonStyle(.bordered)
             }
 
-            Text("The relay stores only signed ciphertext. Hammy decrypts events locally with session keys protected by Keychain.")
+            Text("Your ChatGPT credential never leaves the local Codex app-server. The relay stores only signed ciphertext; session keys stay on trusted devices.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .glassCard()
-    }
-
-    private var connectionColor: Color {
-        switch bridge.state {
-        case .disconnected: .secondary
-        case .connecting: .orange
-        case .connected: .hammyMint
-        case .failed: .red
-        }
     }
 }

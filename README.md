@@ -46,11 +46,11 @@ xcodegen generate
 
 ## Preview versus production
 
-The **Sign in with ChatGPT** button deliberately enters a clearly labeled preview account. A native third-party iOS app cannot silently import arbitrary consumer ChatGPT conversations, and ChatGPT credentials or an OpenAI API key should never be embedded in the app.
+Hammy uses a paired desktop companion for sign-in. The companion starts local Codex app-server and completes the documented ChatGPT device-code flow; the iPhone receives neither a ChatGPT access token nor a Codex credential. Instead, it proves a one-time companion pairing code, receives a device-specific relay token, and decrypts its own recipient-bound session keys from Keychain.
 
 The repository now includes the authenticated multi-user relay under `Backend/`. A trusted desktop companion still owns Codex authentication and plaintext processing, then E2EE-encrypts updates before sending them through the relay. The companion can integrate with the [Codex app server](https://learn.chatgpt.com/docs/app-server), which supplies thread lifecycle, streamed item events, tool progress, and approvals. The documented ChatGPT sign-in flow applies to supported Codex surfaces; see [Codex authentication](https://learn.chatgpt.com/docs/auth).
 
-The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. Its live connection is derived automatically as `wss://backend.yzycoin.app/v1/events/live`; an authenticated relay access token is still required before it connects.
+The iOS app is preconfigured to use the production relay at `https://backend.yzycoin.app`. A paired companion publishes signed E2EE session metadata and progress events; iOS decrypts those envelopes locally. It does not ship demo sessions or token estimates.
 
 The relay, threat model, and versioned cryptographic protocol are documented in `Backend/README.md`, `Backend/THREAT_MODEL.md`, and `Backend/PROTOCOL.md`. The official app-server WebSocket listener is currently experimental, so the trusted companion should prefer local stdio and must never expose a workstation listener directly to the internet.
 

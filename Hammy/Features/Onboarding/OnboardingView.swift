@@ -13,6 +13,8 @@ struct OnboardingView: View {
     @State private var stage: Stage = .welcome
     @State private var introFinished = false
     @State private var authInProgress = false
+    @State private var pairingCode = ""
+    @State private var pairingError: String?
 
     private let introText = """
     Heya! It’s Hammy! Your virtual assistant here to assist and remind you about your ongoing ChatGPT sessions!
@@ -95,7 +97,7 @@ struct OnboardingView: View {
                         Image(systemName: "sparkles")
                             .font(.headline)
                     }
-                    Text(authInProgress ? "Opening secure sign-in…" : "Sign in with ChatGPT")
+                    Text(authInProgress ? "Pairing securely…" : "Pair with Hammy Companion")
                         .font(.headline)
                     Spacer()
                     Image(systemName: "arrow.right")
@@ -118,7 +120,27 @@ struct OnboardingView: View {
             .disabled(authInProgress || !introFinished)
             .opacity(introFinished ? 1 : 0.55)
 
-            Label("Preview sign-in uses sample sessions until a Codex bridge is paired.", systemImage: "lock.shield.fill")
+            TextField("12-character pairing code", text: $pairingCode)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .font(.system(.headline, design: .monospaced))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 14)
+                .frame(height: 52)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 17, style: .continuous)
+                        .stroke(pairingError == nil ? Color.hammyCyan.opacity(0.24) : Color.red.opacity(0.6), lineWidth: 1)
+                }
+
+            if let pairingError {
+                Text(pairingError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+
+            Label("1. Sign in to ChatGPT in Hammy Companion.  2. Tap Pair an iPhone.  3. Enter its one-time code here.", systemImage: "lock.shield.fill")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -231,13 +253,19 @@ struct OnboardingView: View {
 
     private func signIn() {
         authInProgress = true
+        pairingError = nil
         Task {
-            await store.previewSignIn()
-            authInProgress = false
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.84)) {
-                stage = .permissions
+            do {
+                try await store.pairWithCompanion(code: pairingCode)
+                authInProgress = false
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.84)) {
+                    stage = .permissions
+                }
+                await store.requestNotificationPermission()
+            } catch {
+                authInProgress = false
+                pairingError = error.localizedDescription
             }
-            await store.requestNotificationPermission()
         }
     }
 

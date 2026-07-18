@@ -15,6 +15,7 @@ import { RelayHub } from "./realtime/hub.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerDeviceRoutes } from "./routes/devices.js";
 import { registerLiveEventRoute } from "./routes/live-events.js";
+import { registerPairingRoutes } from "./routes/pairings.js";
 import { registerSessionRoutes } from "./routes/sessions.js";
 
 export async function buildApp(options: { config: AppConfig; store?: Store }) {
@@ -57,6 +58,13 @@ export async function buildApp(options: { config: AppConfig; store?: Store }) {
     accessTokenTTLSeconds: options.config.accessTokenTTLSeconds,
   });
   await registerDeviceRoutes(app, { store, authenticator });
+  await registerPairingRoutes(app, {
+    store,
+    tokens,
+    authenticator,
+    refreshTokenTTLDays: options.config.refreshTokenTTLDays,
+    accessTokenTTLSeconds: options.config.accessTokenTTLSeconds,
+  });
   await registerSessionRoutes(app, { store, authenticator, hub });
   await registerLiveEventRoute(app, { store, authenticator, hub });
 

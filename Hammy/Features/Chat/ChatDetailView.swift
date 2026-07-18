@@ -12,6 +12,7 @@ struct ChatDetailView: View {
     @State private var showHammyThought = false
     @State private var isAskingHammy = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var sendError: String?
 
     var body: some View {
         Group {
@@ -62,6 +63,12 @@ struct ChatDetailView: View {
                         ForEach(session.messages) { message in
                             MessageBubble(message: message)
                                 .id(message.id)
+                        }
+                        if let sendError {
+                            Text(sendError)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -152,11 +159,9 @@ struct ChatDetailView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Approve") {
-                store.approve(sessionID: session.id)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            Text("Approve in Companion")
+                .font(.caption.bold())
+                .foregroundStyle(.orange)
         }
         .glassCard(cornerRadius: 20, padding: 13)
     }
@@ -306,8 +311,13 @@ struct ChatDetailView: View {
 
     private func sendMainPrompt() {
         let text = mainText
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         mainText = ""
-        store.sendMainPrompt(text, to: sessionID)
+        sendError = nil
+        Task {
+            do { try await store.sendMainPrompt(text, to: sessionID) }
+            catch { sendError = error.localizedDescription }
+        }
         selectedPhotos.removeAll()
     }
 
@@ -316,8 +326,10 @@ struct ChatDetailView: View {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         asideText = ""
         isAskingHammy = true
+        sendError = nil
         Task {
-            await store.sendAside(text, to: sessionID)
+            do { try await store.sendAside(text, to: sessionID) }
+            catch { sendError = error.localizedDescription }
             isAskingHammy = false
         }
     }
