@@ -4,7 +4,7 @@ Hammy Companion is a local desktop app and CLI for macOS, Windows, and Linux. It
 
 ## Desktop builds
 
-The repository’s GitHub Actions workflow produces native desktop artifacts: a macOS `.app`, Windows NSIS `.exe`, and Linux `.AppImage`. They are not code-signed yet; signing needs your Apple Developer and Windows certificate credentials before public distribution.
+The repository’s GitHub Actions workflow produces native desktop artifacts: a macOS `.app` inside a `.zip`, Windows NSIS `.exe`, and Linux `.AppImage`. They are not code-signed yet; signing needs your Apple Developer and Windows certificate credentials before public distribution.
 
 For local packaging, run `npm run dist:mac`, `npm run dist:win`, or `npm run dist:linux` on the corresponding operating system. Output is written to `Companion/release/`.
 
@@ -26,6 +26,18 @@ npm start
 ```
 
 On Windows PowerShell, run the same commands in PowerShell. If script execution is restricted, use `npm.cmd` in place of `npm`.
+
+### macOS release install and repair
+
+Download and unzip `Hammy-Companion-macos.zip`, then move **Hammy Companion.app** to Applications. Because release builds are not notarized yet, macOS may block the first launch. In Terminal, run:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/Hammy Companion.app"
+chmod +x "/Applications/Hammy Companion.app/Contents/MacOS/Hammy Companion"
+open "/Applications/Hammy Companion.app"
+```
+
+The `chmod` command repairs an archive whose executable bit was removed during download or extraction. Current releases are zipped on macOS specifically to preserve that permission, but the command is safe to run if the app does not open.
 
 ## Local workflow
 

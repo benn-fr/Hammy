@@ -20,8 +20,8 @@ jobs:
         include:
           - os: macos-latest
             command: npm run dist:mac
-            artifact: Companion/release/mac*/Hammy Companion.app
-            name: hammy-companion-macos-app
+            artifact: Companion/release/Hammy-Companion-macos.zip
+            name: hammy-companion-macos-zip
           - os: windows-latest
             command: npm run dist:win
             artifact: Companion/release/*.exe
@@ -40,6 +40,14 @@ jobs:
         with: { node-version: 22, cache: npm, cache-dependency-path: Companion/package-lock.json }
       - run: npm ci
       - run: ${{ matrix.command }}
+      - name: Archive macOS app without stripping execute permissions
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_bundle="$(find release -type d -name 'Hammy Companion.app' -print -quit)"
+          test -n "$app_bundle"
+          ditto -c -k --sequesterRsrc --keepParent "$app_bundle" release/Hammy-Companion-macos.zip
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
@@ -81,16 +89,11 @@ jobs:
         with:
           path: release-assets
 
-      - name: Package the macOS app bundle
+      - name: Prepare release assets
         shell: bash
         run: |
           set -euo pipefail
-          app_bundle="$(find release-assets -type d -name 'Hammy Companion.app' -print -quit)"
-          test -n "$app_bundle"
-          (
-            cd "$(dirname "$app_bundle")"
-            zip -qry "$GITHUB_WORKSPACE/release-assets/Hammy-Companion-macos.zip" "$(basename "$app_bundle")"
-          )
+          cp "$(find release-assets -type f -name 'Hammy-Companion-macos.zip' -print -quit)" release-assets/Hammy-Companion-macos.zip
           cp "$(find release-assets -type f -name '*.exe' -print -quit)" release-assets/Hammy-Companion-windows.exe
           cp "$(find release-assets -type f -name '*.AppImage' -print -quit)" release-assets/Hammy-Companion-linux.AppImage
           cp "$(find release-assets -type f -name 'Hammy-unsigned.ipa' -print -quit)" release-assets/Hammy-unsigned.ipa
