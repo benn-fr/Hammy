@@ -20,14 +20,14 @@ Codex app server
   Codex authentication, threads, turns, approvals, streamed items
 ```
 
-The bridge belongs on a trusted Mac or developer machine. It owns Codex authentication, plaintext session data, workspace access, and policy enforcement. The relay in `Backend/` never receives content keys or plaintext session fields.
+The bridge belongs on the user's trusted Mac, Windows, or Linux machine. It owns Codex authentication, plaintext session data, workspace access, and policy enforcement. The relay in `Backend/` never receives content keys, plaintext session fields, or Codex credentials. `Companion/` provides the local cross-platform CLI wrapper for Codex device login, local remote-control pairing, and local app-server startup.
 
 The [Codex app-server documentation](https://learn.chatgpt.com/docs/app-server) describes `thread/start`, `thread/resume`, `thread/fork`, `turn/start`, `turn/steer`, streamed item notifications, and `turn/completed`. Prefer its default stdio transport or protected local control socket behind the bridge. Do not expose the experimental raw WebSocket listener directly to the public internet.
 
 ## Account pairing
 
 1. The first iPhone creates a Hammy account and generates its device keys in Keychain.
-2. The Mac bridge signs into the Hammy account and registers its public keys as a pending device.
+2. The user's local Companion completes Codex device login, then the bridge signs into the Hammy account and registers its public keys as a pending device.
 3. The iPhone verifies and Ed25519-signs the exact pending-device keys.
 4. The bridge separately completes the supported Codex/ChatGPT authentication flow locally.
 5. The bridge creates session content keys and packages them independently to every trusted Hammy device.

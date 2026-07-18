@@ -80,6 +80,7 @@ Hammy/
 ├── HammyTests/               State and behavior tests
 ├── HammyUITests/             End-to-end layout flows and screenshots
 ├── Backend/                  Multi-user E2EE API, database, relay, and tests
+├── Companion/                Local cross-platform Codex pairing CLI
 ├── QA/                       Local verification artifacts (Git-ignored)
 ├── project.yml               XcodeGen project definition
 └── INTEGRATION.md            Production bridge contract and rollout notes

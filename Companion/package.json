@@ -1,0 +1,14 @@
+{
+  "name": "@hammy/companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local, cross-platform companion for pairing Hammy to Codex.",
+  "engines": { "node": ">=22" },
+  "bin": { "hammy-companion": "./dist/cli.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": { "@types/node": "^24.10.0", "typescript": "^5.9.3" }
+}
