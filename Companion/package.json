@@ -20,7 +20,6 @@
     "appId": "app.yzycoin.hammy-companion",
     "productName": "Hammy Companion",
     "executableName": "Hammy Companion",
-    "desktopName": "hammy-companion",
     "directories": { "output": "release" },
     "files": ["dist-electron/**/*", "desktop/renderer/**/*", "package.json"],
     "mac": { "target": ["dir"], "category": "public.app-category.productivity" },
